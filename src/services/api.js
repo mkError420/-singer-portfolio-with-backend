@@ -70,7 +70,17 @@ export const videosAPI = {
 };
 
 export const galleryAPI = {
-  getAllImages: () => api.get('/gallery'),
+  getAllImages: async () => {
+    try {
+      const response = await axios.get('http://localhost/madam-portfolio/backend/api/gallery.php');
+      console.log('📊 Gallery API raw response:', response);
+      console.log('📊 Gallery API data:', response.data);
+      return response.data; // Return just the data, not the full response
+    } catch (error) {
+      console.error('❌ Gallery API error:', error);
+      throw error;
+    }
+  },
   getImagesByCategory: (category) => api.get(`/gallery?category=${category}`),
 };
 

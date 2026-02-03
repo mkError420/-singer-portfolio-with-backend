@@ -60,50 +60,166 @@ function getGallery($db) {
 }
 
 function createGalleryItem($db) {
+    // Clear any previous output
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
+    error_log("🔄 Creating gallery item");
+    
     $data = json_decode(file_get_contents("php://input"));
+    error_log("📊 Received data: " . print_r($data, true));
     
-    $query = "INSERT INTO gallery (title, image, thumbnail, category, description) 
-              VALUES (:title, :image, :thumbnail, :category, :description)";
+    // Validate required fields
+    if (!$data || !isset($data->title) || !isset($data->category)) {
+        http_response_code(400);
+        echo json_encode(['message' => 'Missing required fields: title and category are required']);
+        return;
+    }
     
-    $stmt = $db->prepare($query);
+    // Check if columns exist, add them if they don't
+    try {
+        $checkColumns = "SHOW COLUMNS FROM gallery LIKE 'upload_month'";
+        $stmt = $db->prepare($checkColumns);
+        $stmt->execute();
+        if ($stmt->rowCount() == 0) {
+            // Add upload_month column
+            $db->exec("ALTER TABLE gallery ADD COLUMN upload_month VARCHAR(2) AFTER description");
+        }
+        
+        $checkColumns = "SHOW COLUMNS FROM gallery LIKE 'upload_year'";
+        $stmt = $db->prepare($checkColumns);
+        $stmt->execute();
+        if ($stmt->rowCount() == 0) {
+            // Add upload_year column
+            $db->exec("ALTER TABLE gallery ADD COLUMN upload_year VARCHAR(4) AFTER upload_month");
+        }
+    } catch (Exception $e) {
+        error_log("⚠️ Column check failed: " . $e->getMessage());
+    }
     
-    $stmt->bindParam(':title', $data->title);
-    $stmt->bindParam(':image', $data->image);
-    $stmt->bindParam(':thumbnail', $data->thumbnail);
-    $stmt->bindParam(':category', $data->category);
-    $stmt->bindParam(':description', $data->description);
+    $query = "INSERT INTO gallery (title, image, thumbnail, category, description, upload_month, upload_year) 
+              VALUES (:title, :image, :thumbnail, :category, :description, :upload_month, :upload_year)";
     
-    if ($stmt->execute()) {
-        echo json_encode(['message' => 'Gallery item created successfully', 'id' => $db->lastInsertId()]);
-    } else {
-        echo json_encode(['message' => 'Gallery item creation failed']);
+    try {
+        $stmt = $db->prepare($query);
+        
+        $title = $data->title ?? '';
+        $image = $data->image ?? '';
+        $thumbnail = $data->thumbnail ?? null;
+        $category = $data->category ?? 'general';
+        $description = $data->description ?? '';
+        $upload_month = $data->upload_month ?? null;
+        $upload_year = $data->upload_year ?? null;
+        
+        $stmt->bindParam(':title', $title);
+        $stmt->bindParam(':image', $image);
+        $stmt->bindParam(':thumbnail', $thumbnail);
+        $stmt->bindParam(':category', $category);
+        $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':upload_month', $upload_month);
+        $stmt->bindParam(':upload_year', $upload_year);
+        
+        if ($stmt->execute()) {
+            $id = $db->lastInsertId();
+            error_log("✅ Gallery item created successfully with ID: " . $id);
+            echo json_encode(['message' => 'Gallery item created successfully', 'id' => $id]);
+        } else {
+            $error = $stmt->errorInfo();
+            error_log("❌ Gallery item creation failed: " . print_r($error, true));
+            http_response_code(500);
+            echo json_encode(['message' => 'Gallery item creation failed: ' . $error[2]]);
+        }
+    } catch (Exception $e) {
+        error_log("❌ Database error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['message' => 'Database error: ' . $e->getMessage()]);
     }
 }
 
 function updateGalleryItem($db) {
+    // Clear any previous output
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
+    error_log("🔄 Updating gallery item");
+    
     $data = json_decode(file_get_contents("php://input"));
+    error_log("📊 Received update data: " . print_r($data, true));
+    
+    // Validate required fields
+    if (!$data || !isset($data->id) || !isset($data->title) || !isset($data->category)) {
+        http_response_code(400);
+        echo json_encode(['message' => 'Missing required fields: id, title, and category are required']);
+        return;
+    }
+    
+    // Check if columns exist, add them if they don't
+    try {
+        $checkColumns = "SHOW COLUMNS FROM gallery LIKE 'upload_month'";
+        $stmt = $db->prepare($checkColumns);
+        $stmt->execute();
+        if ($stmt->rowCount() == 0) {
+            // Add upload_month column
+            $db->exec("ALTER TABLE gallery ADD COLUMN upload_month VARCHAR(2) AFTER description");
+        }
+        
+        $checkColumns = "SHOW COLUMNS FROM gallery LIKE 'upload_year'";
+        $stmt = $db->prepare($checkColumns);
+        $stmt->execute();
+        if ($stmt->rowCount() == 0) {
+            // Add upload_year column
+            $db->exec("ALTER TABLE gallery ADD COLUMN upload_year VARCHAR(4) AFTER upload_month");
+        }
+    } catch (Exception $e) {
+        error_log("⚠️ Column check failed: " . $e->getMessage());
+    }
     
     $query = "UPDATE gallery SET 
               title = :title, 
               image = :image, 
               thumbnail = :thumbnail, 
               category = :category, 
-              description = :description 
+              description = :description,
+              upload_month = :upload_month,
+              upload_year = :upload_year
               WHERE id = :id";
     
-    $stmt = $db->prepare($query);
-    
-    $stmt->bindParam(':title', $data->title);
-    $stmt->bindParam(':image', $data->image);
-    $stmt->bindParam(':thumbnail', $data->thumbnail);
-    $stmt->bindParam(':category', $data->category);
-    $stmt->bindParam(':description', $data->description);
-    $stmt->bindParam(':id', $data->id);
-    
-    if ($stmt->execute()) {
-        echo json_encode(['message' => 'Gallery item updated successfully']);
-    } else {
-        echo json_encode(['message' => 'Gallery item update failed']);
+    try {
+        $stmt = $db->prepare($query);
+        
+        $id = $data->id;
+        $title = $data->title ?? '';
+        $image = $data->image ?? '';
+        $thumbnail = $data->thumbnail ?? null;
+        $category = $data->category ?? 'general';
+        $description = $data->description ?? '';
+        $upload_month = $data->upload_month ?? null;
+        $upload_year = $data->upload_year ?? null;
+        
+        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':title', $title);
+        $stmt->bindParam(':image', $image);
+        $stmt->bindParam(':thumbnail', $thumbnail);
+        $stmt->bindParam(':category', $category);
+        $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':upload_month', $upload_month);
+        $stmt->bindParam(':upload_year', $upload_year);
+        
+        if ($stmt->execute()) {
+            error_log("✅ Gallery item updated successfully");
+            echo json_encode(['message' => 'Gallery item updated successfully']);
+        } else {
+            $error = $stmt->errorInfo();
+            error_log("❌ Gallery item update failed: " . print_r($error, true));
+            http_response_code(500);
+            echo json_encode(['message' => 'Gallery item update failed: ' . $error[2]]);
+        }
+    } catch (Exception $e) {
+        error_log("❌ Database error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['message' => 'Database error: ' . $e->getMessage()]);
     }
 }
 
