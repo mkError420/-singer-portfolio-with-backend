@@ -512,19 +512,8 @@ $currentUser = $auth->getCurrentUser();
                     statusElement.textContent = 'Error loading categories';
                     statusElement.style.color = '#dc3545';
                 }
-                
-                // Fallback to default categories
-                categories = [
-                    { name: 'album', description: 'Studio Albums' },
-                    { name: 'acoustic', description: 'Acoustic Versions' }
-                ];
-                console.log('Using fallback categories:', categories);
-                populateCategorySelect();
-                
-                if (statusElement) {
-                    statusElement.textContent = 'Using default categories';
-                    statusElement.style.color = '#ffc107';
-                }
+                // Do not use a fallback. If categories fail to load, it's a critical error.
+                alert('Could not load album categories from the server. Please check the API and database connection. You will not be able to save albums correctly without categories.');
             }
         }
         

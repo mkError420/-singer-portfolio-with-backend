@@ -265,22 +265,33 @@ $currentUser = $auth->getCurrentUser();
     <script>
         // Load dashboard statistics
         async function loadStats() {
-            try {
-                // Load albums count
-                const albumsResponse = await fetch('../api/albums.php');
-                const albums = await albumsResponse.json();
-                document.getElementById('albums-count').textContent = albums.length;
-                
-                // Load singles count
-                const singlesResponse = await fetch('../api/singles.php');
-                const singles = await singlesResponse.json();
-                document.getElementById('singles-count').textContent = singles.length;
-                
-                // Load gallery count
-                const galleryResponse = await fetch('../api/gallery.php');
-                const gallery = await galleryResponse.json();
-                document.getElementById('gallery-count').textContent = gallery.length;
-                
+            const statEndpoints = {
+                'albums-count': '../api/albums.php',
+                'singles-count': '../api/singles.php',
+                'gallery-count': '../api/gallery.php',
+                'messages-count': '../api/messages.php' // Assuming this endpoint gives new messages
+            };
+
+            for (const elementId in statEndpoints) {
+                try {
+                    const response = await fetch(statEndpoints[elementId]);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    document.getElementById(elementId).textContent = Array.isArray(data) ? data.length : 'N/A';
+                } catch (error) {
+                    console.error(`Error loading stat for ${elementId}:`, error);
+                    document.getElementById(elementId).textContent = 'Error';
+                }
+            }
+        }
+        
+        // Load stats when page loads
+        document.addEventListener('DOMContentLoaded', loadStats);
+    </script>
+</body>
+</html>
             } catch (error) {
                 console.error('Error loading stats:', error);
             }

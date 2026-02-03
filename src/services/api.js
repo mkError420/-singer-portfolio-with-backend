@@ -33,17 +33,34 @@ api.interceptors.response.use(
 
 // API service functions - using full URL for albums (temporary fix)
 export const musicAPI = {
-  getAlbums: () => {
-    // Use full URL to bypass proxy issues
-    return axios.get('http://localhost/madam-portfolio/backend/api/albums_fixed.php');
+  getAlbums: async () => {
+    try {
+      const response = await axios.get('http://localhost/madam-portfolio/backend/api/albums_fixed.php');
+      console.log('📊 Albums API raw response:', response);
+      console.log('📊 Albums API data:', response.data);
+      return response.data; // Return just the data, not the full response
+    } catch (error) {
+      console.error('❌ Albums API error:', error);
+      throw error;
+    }
   },
-  getSingles: () => api.get('/singles.php'),
+  getSingles: async () => {
+    try {
+      const response = await axios.get('http://localhost/madam-portfolio/backend/api/singles.php');
+      console.log('📊 Singles API raw response:', response);
+      console.log('📊 Singles API data:', response.data);
+      return response.data; // Return just the data, not the full response
+    } catch (error) {
+      console.error('❌ Singles API error:', error);
+      throw error;
+    }
+  },
   getAllMusic: async () => {
     const [albums, singles] = await Promise.all([
       axios.get('http://localhost/madam-portfolio/backend/api/albums_fixed.php'),
-      api.get('/singles.php')
+      axios.get('http://localhost/madam-portfolio/backend/api/singles.php')
     ]);
-    return { albums, singles };
+    return { albums: albums.data, singles: singles.data };
   },
 };
 

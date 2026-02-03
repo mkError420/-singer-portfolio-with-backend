@@ -22,20 +22,31 @@ const Music = () => {
     const loadData = async () => {
       try {
         setLoading(true);
+        console.log('🔄 Loading albums...');
         const albumsData = await musicAPI.getAlbums();
-        const singlesData = await musicAPI.getSingles();
+        console.log('📊 Albums data:', albumsData);
+        console.log('📊 Albums count:', albumsData.length);
         
-        // Handle empty singles gracefully
-        const singles = Array.isArray(singlesData) ? singlesData : [];
-        console.log('Albums loaded:', albumsData.length);
-        console.log('Singles loaded:', singles.length);
+        console.log('🔄 Loading singles...');
+        const singlesData = await musicAPI.getSingles();
+        console.log('📊 Singles data:', singlesData);
+        console.log('📊 Singles count:', singlesData.length);
         
         // Load tracks for each album
         const albumsWithTracks = await Promise.all(
           albumsData.map(async (album) => {
             try {
+              console.log('📸 Album cover image path:', album.cover_image);
+              
               const response = await fetch(`http://localhost/madam-portfolio/backend/api/albums_fixed.php?album_id=${album.id}&include_tracks=1`);
               const albumWithTracks = await response.json();
+              
+              // Fix the cover image URL
+              if (albumWithTracks.cover_image) {
+                albumWithTracks.cover_image = `http://localhost/madam-portfolio/backend/${albumWithTracks.cover_image}`;
+                console.log('📸 Fixed cover image URL:', albumWithTracks.cover_image);
+              }
+              
               return albumWithTracks;
             } catch (error) {
               console.error(`Error loading tracks for album ${album.id}:`, error);
@@ -45,7 +56,18 @@ const Music = () => {
         );
         
         setAlbums(albumsWithTracks);
-        setSingles(singles);
+        
+        // Fix singles cover image URLs
+        const singlesWithFixedImages = singlesData.map(single => {
+          console.log('📸 Single cover image path:', single.cover_image);
+          if (single.cover_image) {
+            single.cover_image = `http://localhost/madam-portfolio/backend/${single.cover_image}`;
+            console.log('📸 Fixed single cover image URL:', single.cover_image);
+          }
+          return single;
+        });
+        
+        setSingles(singlesWithFixedImages);
         setError(null);
       } catch (err) {
         console.error('Error loading music data:', err);
@@ -504,7 +526,7 @@ const Music = () => {
               >
                 <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
                   <img
-                    src={album.cover_image ? `/${album.cover_image}` : `https://via.placeholder.com/120x120/2a2a2a/ffffff?text=${encodeURIComponent(album.title)}`}
+                    src={album.cover_image || `https://via.placeholder.com/120x120/2a2a2a/ffffff?text=${encodeURIComponent(album.title)}`}
                     alt={album.title}
                     onError={(e) => {
                       e.target.src = `https://via.placeholder.com/120x120/2a2a2a/ffffff?text=${encodeURIComponent(album.title)}`;
@@ -687,7 +709,7 @@ const Music = () => {
                 style={{ textAlign: 'center' }}
               >
                 <img
-                  src={single.cover_image ? `/${single.cover_image}` : `https://via.placeholder.com/250x250/2a2a2a/ffffff?text=${encodeURIComponent(single.title)}`}
+                  src={single.cover_image || `https://via.placeholder.com/250x250/2a2a2a/ffffff?text=${encodeURIComponent(single.title)}`}
                   alt={single.title}
                   onError={(e) => {
                     e.target.src = `https://via.placeholder.com/250x250/2a2a2a/ffffff?text=${encodeURIComponent(single.title)}`;
