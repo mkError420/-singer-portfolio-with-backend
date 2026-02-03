@@ -143,15 +143,19 @@ const Music = () => {
 
   // Filter albums and singles based on search and category
   const filteredAlbums = albums.filter(album => {
-    const matchesSearch = album.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         album.artist.toLowerCase().includes(searchTerm.toLowerCase());
+    const title = album.title || '';
+    const artist = album.artist || '';
+    const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         artist.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || selectedCategory === 'albums';
     return matchesSearch && matchesCategory;
   });
 
   const filteredSingles = singles.filter(single => {
-    const matchesSearch = single.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         single.artist.toLowerCase().includes(searchTerm.toLowerCase());
+    const title = single.title || '';
+    const artist = single.artist || '';
+    const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         artist.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || selectedCategory === 'singles';
     return matchesSearch && matchesCategory;
   });
@@ -302,22 +306,50 @@ const Music = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
-                      padding: '0.5rem 1rem',
+                      padding: '0.75rem 1.5rem',
                       borderRadius: '25px',
                       background: selectedCategory === category.id 
-                        ? 'var(--accent-color)' 
+                        ? 'linear-gradient(45deg, #ff6b6b, #ee5a24)' 
                         : 'rgba(255, 255, 255, 0.1)',
                       border: selectedCategory === category.id 
-                        ? '1px solid var(--accent-color)' 
+                        ? '2px solid #ff6b6b' 
                         : '1px solid rgba(255, 255, 255, 0.2)',
-                      color: 'var(--text-primary)',
+                      color: selectedCategory === category.id ? '#ffffff' : 'var(--text-primary)',
                       fontSize: '0.9rem',
+                      fontWeight: selectedCategory === category.id ? '600' : '400',
                       cursor: 'pointer',
                       transition: 'all 0.3s ease',
+                      boxShadow: selectedCategory === category.id 
+                        ? '0 4px 15px rgba(255, 107, 107, 0.4)' 
+                        : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedCategory !== category.id) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedCategory !== category.id) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                      }
                     }}
                   >
-                    <span>{category.icon}</span>
+                    <span style={{ fontSize: '1.1rem' }}>{category.icon}</span>
                     <span>{category.label}</span>
+                    {selectedCategory === category.id && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        style={{
+                          marginLeft: '0.25rem',
+                          fontSize: '0.8rem',
+                        }}
+                      >
+                        ✓
+                      </motion.span>
+                    )}
                   </motion.button>
                 ))}
               </div>
@@ -326,10 +358,11 @@ const Music = () => {
         </section>
 
         {/* Albums Section */}
-        <section className="albums" style={{
-          padding: '5rem 0',
-          background: 'var(--primary-color)',
-        }}>
+        {(selectedCategory === 'all' || selectedCategory === 'albums') && filteredAlbums.length > 0 && (
+          <section className="albums" style={{
+            padding: '5rem 0',
+            background: 'var(--primary-color)',
+          }}>
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 50 }}
@@ -516,12 +549,14 @@ const Music = () => {
             </div>
           </div>
         </section>
+        )}
 
         {/* Singles Section */}
-        <section className="singles" style={{
-          padding: '5rem 0',
-          background: 'var(--secondary-color)',
-        }}>
+        {(selectedCategory === 'all' || selectedCategory === 'singles') && filteredSingles.length > 0 && (
+          <section className="singles" style={{
+            padding: '5rem 0',
+            background: 'var(--secondary-color)',
+          }}>
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 50 }}
@@ -779,6 +814,70 @@ const Music = () => {
             </div>
           </div>
         </section>
+        )}
+
+        {/* No Results Message */}
+        {searchTerm && filteredAlbums.length === 0 && filteredSingles.length === 0 && (
+          <section style={{
+            padding: '5rem 0',
+            background: 'var(--primary-color)',
+            textAlign: 'center',
+          }}>
+            <div className="container">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <div style={{ 
+                  fontSize: '4rem', 
+                  marginBottom: '1rem', 
+                  opacity: 0.5 
+                }}>
+                  🔍
+                </div>
+                <h3 style={{ 
+                  color: 'var(--text-primary)', 
+                  marginBottom: '1rem',
+                  fontSize: '1.5rem'
+                }}>
+                  No results found
+                </h3>
+                <p style={{ 
+                  color: 'var(--text-secondary)', 
+                  marginBottom: '1.5rem',
+                  fontSize: '1.1rem'
+                }}>
+                  No albums or singles match "{searchTerm}"
+                </p>
+                <button
+                  onClick={() => setSearchTerm('')}
+                  style={{
+                    padding: '0.75rem 2rem',
+                    background: 'linear-gradient(45deg, #ff6b6b, #ee5a24)',
+                    border: 'none',
+                    borderRadius: '25px',
+                    color: 'white',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 5px 15px rgba(255, 107, 107, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  Clear Search
+                </button>
+              </motion.div>
+            </div>
+          </section>
+        )}
 
         {/* Video Modal */}
         {showVideoModal && (
