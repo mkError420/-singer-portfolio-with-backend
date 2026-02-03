@@ -9,6 +9,8 @@ const Gallery = () => {
   const [selectedYear, setSelectedYear] = useState('all');
   const [galleryImages, setGalleryImages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const imagesPerPage = 12;
 
   useEffect(() => {
     fetchGalleryImages();
@@ -72,6 +74,11 @@ const Gallery = () => {
     }
     return counts;
   }, {});
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, selectedMonth, selectedYear]);
 
   // Get available months from gallery data
   const getAvailableMonths = () => {
@@ -147,6 +154,20 @@ const Gallery = () => {
     
   // Get grouped images for display
   const groupedImages = groupImagesByMonthYear(filteredImages);
+
+  // Pagination calculations
+  const indexOfLastImage = currentPage * imagesPerPage;
+  const indexOfFirstImage = indexOfLastImage - imagesPerPage;
+  const currentImages = filteredImages.slice(indexOfFirstImage, indexOfLastImage);
+  const totalPages = Math.ceil(filteredImages.length / imagesPerPage);
+
+  // Get grouped images for current page
+  const currentGroupedImages = groupImagesByMonthYear(currentImages);
+
+  // Pagination functions
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const goToPreviousPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+  const goToNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
 
   const openLightbox = (image) => {
     setSelectedImage(image);
@@ -237,311 +258,537 @@ const Gallery = () => {
         </div>
       </section>
 
-      {/* Filter Buttons */}
+      {/* Filter Dropdowns */}
       <section className="gallery-filters" style={{
-        padding: '2rem 0',
-        background: 'var(--primary-color)',
+        padding: '3rem 0',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <div className="container">
+        {/* Background Pattern */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          opacity: 0.3,
+        }} />
+        
+        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            style={{
+              textAlign: 'center',
+              marginBottom: '2rem',
+            }}
+          >
+            <h2 style={{
+              color: 'white',
+              fontSize: '2.5rem',
+              fontWeight: '700',
+              margin: '0 0 0.5rem',
+              textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+            }}>
+              Gallery Filters
+            </h2>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '1.1rem',
+              margin: 0,
+              fontWeight: '400',
+            }}>
+              Discover moments by category, month, or year
+            </p>
+          </motion.div>
+
           <div style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: '1rem',
+            gap: '2rem',
             flexWrap: 'wrap',
+            maxWidth: '900px',
+            margin: '0 auto',
           }}>
-            {categories.map((category) => (
-              <motion.button
-                key={category.id}
-                onClick={() => setFilter(category.id)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  fontSize: '0.9rem',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '25px',
-                  background: filter === category.id 
-                    ? 'linear-gradient(45deg, #ff6b6b, #ee5a24)' 
-                    : 'rgba(255, 255, 255, 0.1)',
-                  border: filter === category.id 
-                    ? '2px solid #ff6b6b' 
-                    : '1px solid rgba(255, 255, 255, 0.2)',
-                  color: filter === category.id ? '#ffffff' : 'var(--text-primary)',
-                  fontWeight: filter === category.id ? '600' : '400',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: filter === category.id 
-                    ? '0 4px 15px rgba(255, 107, 107, 0.4)' 
-                    : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                }}
-                onMouseEnter={(e) => {
-                  if (filter !== category.id) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (filter !== category.id) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                  }
-                }}
-              >
-                <span>{category.label}</span>
-                <span style={{
-                  background: filter === category.id 
-                    ? 'rgba(255, 255, 255, 0.2)' 
-                    : 'rgba(255, 255, 255, 0.1)',
-                  padding: '0.2rem 0.5rem',
-                  borderRadius: '12px',
-                  fontSize: '0.8rem',
-                  minWidth: '20px',
-                  textAlign: 'center',
-                }}>
-                  {categoryCounts[category.id] || 0}
-                </span>
-                {filter === category.id && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
+            {/* Category Filter Pills */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              style={{
+                marginBottom: '2rem',
+              }}
+            >
+              <h3 style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                margin: '0 0 1rem',
+                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+              }}>
+                <span style={{ fontSize: '1.3rem' }}>🎨</span>
+                Categories
+              </h3>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '0.75rem',
+                flexWrap: 'wrap',
+              }}>
+                {categories.map((category) => (
+                  <motion.button
+                    key={category.id}
+                    onClick={() => setFilter(category.id)}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
                     style={{
-                      marginLeft: '0.25rem',
-                      fontSize: '0.8rem',
+                      padding: '0.6rem 1.2rem',
+                      borderRadius: '25px',
+                      background: filter === category.id 
+                        ? 'linear-gradient(135deg, #ff6b6b, #ee5a24)' 
+                        : 'rgba(255, 255, 255, 0.15)',
+                      border: filter === category.id 
+                        ? '2px solid #ff6b6b' 
+                        : '1px solid rgba(255, 255, 255, 0.3)',
+                      color: 'white',
+                      fontSize: '0.85rem',
+                      fontWeight: filter === category.id ? '600' : '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      boxShadow: filter === category.id 
+                        ? '0 6px 20px rgba(255, 107, 107, 0.4)' 
+                        : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                      backdropFilter: 'blur(10px)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      minWidth: '100px',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (filter !== category.id) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (filter !== category.id) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                      }
                     }}
                   >
-                    ✓
-                  </motion.span>
-                )}
-              </motion.button>
-            ))}
-          </div>
-          
-          {/* Month Filters */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            flexWrap: 'wrap',
-            marginTop: '1.5rem',
-          }}>
-            <motion.button
-              key="month-all"
-              onClick={() => setSelectedMonth('all')}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+                    <span style={{ position: 'relative', zIndex: 1 }}>
+                      {category.label}
+                    </span>
+                    <span style={{
+                      background: filter === category.id 
+                        ? 'rgba(255, 255, 255, 0.2)' 
+                        : 'rgba(255, 255, 255, 0.1)',
+                      padding: '0.15rem 0.4rem',
+                      borderRadius: '10px',
+                      fontSize: '0.75rem',
+                      marginLeft: '0.5rem',
+                    }}>
+                      {categoryCounts[category.id] || 0}
+                    </span>
+                    {filter === category.id && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 400 }}
+                        style={{
+                          position: 'absolute',
+                          top: '-2px',
+                          right: '-2px',
+                          width: '12px',
+                          height: '12px',
+                          background: '#ff6b6b',
+                          borderRadius: '50%',
+                          border: '2px solid white',
+                        }}
+                      />
+                    )}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Month Filter Pills */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
               style={{
-                fontSize: '0.85rem',
-                padding: '0.5rem 1rem',
-                borderRadius: '20px',
-                background: selectedMonth === 'all' 
-                  ? 'linear-gradient(45deg, #ff6b6b, #ee5a24)' 
-                  : 'rgba(255, 255, 255, 0.1)',
-                border: selectedMonth === 'all' 
-                  ? '2px solid #ff6b6b' 
-                  : '1px solid rgba(255, 255, 255, 0.2)',
-                color: selectedMonth === 'all' ? '#ffffff' : 'var(--text-primary)',
-                fontWeight: selectedMonth === 'all' ? '600' : '400',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                boxShadow: selectedMonth === 'all' 
-                  ? '0 4px 15px rgba(255, 107, 107, 0.4)' 
-                  : 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-              }}
-              onMouseEnter={(e) => {
-                if (selectedMonth !== 'all') {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedMonth !== 'all') {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                }
+                marginBottom: '2rem',
               }}
             >
-              <span>📅 All Months</span>
-              {selectedMonth === 'all' && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  style={{ fontSize: '0.8rem' }}
-                >
-                  ✓
-                </motion.span>
-              )}
-            </motion.button>
-            
-            {getAvailableMonths().map((month) => (
-              <motion.button
-                key={`month-${month}`}
-                onClick={() => setSelectedMonth(month)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  fontSize: '0.85rem',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '20px',
-                  background: selectedMonth === month 
-                    ? 'linear-gradient(45deg, #ff6b6b, #ee5a24)' 
-                    : 'rgba(255, 255, 255, 0.1)',
-                  border: selectedMonth === month 
-                    ? '2px solid #ff6b6b' 
-                    : '1px solid rgba(255, 255, 255, 0.2)',
-                  color: selectedMonth === month ? '#ffffff' : 'var(--text-primary)',
-                  fontWeight: selectedMonth === month ? '600' : '400',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: selectedMonth === month 
-                    ? '0 4px 15px rgba(255, 107, 107, 0.4)' 
-                    : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedMonth !== month) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedMonth !== month) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                  }
-                }}
-              >
-                <span>{getMonthName(month)}</span>
-                {selectedMonth === month && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    style={{ fontSize: '0.8rem' }}
-                  >
-                    ✓
-                  </motion.span>
-                )}
-              </motion.button>
-            ))}
-          </div>
-          
-          {/* Year Filters */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            flexWrap: 'wrap',
-            marginTop: '1rem',
-          }}>
-            <motion.button
-              key="year-all"
-              onClick={() => setSelectedYear('all')}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                fontSize: '0.85rem',
-                padding: '0.5rem 1rem',
-                borderRadius: '20px',
-                background: selectedYear === 'all' 
-                  ? 'linear-gradient(45deg, #9b59b6, #8e44ad)' 
-                  : 'rgba(255, 255, 255, 0.1)',
-                border: selectedYear === 'all' 
-                  ? '2px solid #9b59b6' 
-                  : '1px solid rgba(255, 255, 255, 0.2)',
-                color: selectedYear === 'all' ? '#ffffff' : 'var(--text-primary)',
-                fontWeight: selectedYear === 'all' ? '600' : '400',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                boxShadow: selectedYear === 'all' 
-                  ? '0 4px 15px rgba(155, 89, 182, 0.4)' 
-                  : 'none',
+              <h3 style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                margin: '0 0 1rem',
+                textAlign: 'center',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '0.5rem',
-              }}
-              onMouseEnter={(e) => {
-                if (selectedYear !== 'all') {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedYear !== 'all') {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                }
+              }}>
+                <span style={{ fontSize: '1.3rem' }}>📅</span>
+                Months
+              </h3>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                flexWrap: 'wrap',
+              }}>
+                <motion.button
+                  key="month-all"
+                  onClick={() => setSelectedMonth('all')}
+                  whileHover={{ scale: 1.05, y: -3 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '20px',
+                    background: selectedMonth === 'all' 
+                      ? 'linear-gradient(135deg, #f093fb, #f5576c)' 
+                      : 'rgba(255, 255, 255, 0.15)',
+                    border: selectedMonth === 'all' 
+                      ? '2px solid #f093fb' 
+                      : '1px solid rgba(255, 255, 255, 0.3)',
+                    color: 'white',
+                    fontSize: '0.8rem',
+                    fontWeight: selectedMonth === 'all' ? '600' : '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: selectedMonth === 'all' 
+                      ? '0 6px 20px rgba(240, 147, 251, 0.4)' 
+                      : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedMonth !== 'all') {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedMonth !== 'all') {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    }
+                  }}
+                >
+                  <span style={{ position: 'relative', zIndex: 1 }}>
+                    All Months
+                  </span>
+                  {selectedMonth === 'all' && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 400 }}
+                      style={{
+                        position: 'absolute',
+                        top: '-2px',
+                        right: '-2px',
+                        width: '10px',
+                        height: '10px',
+                        background: '#f093fb',
+                        borderRadius: '50%',
+                        border: '2px solid white',
+                      }}
+                    />
+                  )}
+                </motion.button>
+                
+                {getAvailableMonths().map((month) => (
+                  <motion.button
+                    key={`month-${month}`}
+                    onClick={() => setSelectedMonth(month)}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '20px',
+                      background: selectedMonth === month 
+                        ? 'linear-gradient(135deg, #f093fb, #f5576c)' 
+                        : 'rgba(255, 255, 255, 0.15)',
+                      border: selectedMonth === month 
+                        ? '2px solid #f093fb' 
+                        : '1px solid rgba(255, 255, 255, 0.3)',
+                      color: 'white',
+                      fontSize: '0.8rem',
+                      fontWeight: selectedMonth === month ? '600' : '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      boxShadow: selectedMonth === month 
+                        ? '0 6px 20px rgba(240, 147, 251, 0.4)' 
+                        : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                      backdropFilter: 'blur(10px)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedMonth !== month) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedMonth !== month) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                      }
+                    }}
+                  >
+                    <span style={{ position: 'relative', zIndex: 1 }}>
+                      {getMonthName(month).slice(0, 3)}
+                    </span>
+                    {selectedMonth === month && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 400 }}
+                        style={{
+                          position: 'absolute',
+                          top: '-2px',
+                          right: '-2px',
+                          width: '10px',
+                          height: '10px',
+                          background: '#f093fb',
+                          borderRadius: '50%',
+                          border: '2px solid white',
+                        }}
+                      />
+                    )}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Year Filter Pills */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              style={{
+                marginBottom: '2rem',
               }}
             >
-              <span>📆 All Years</span>
-              {selectedYear === 'all' && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  style={{ fontSize: '0.8rem' }}
+              <h3 style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                margin: '0 0 1rem',
+                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+              }}>
+                <span style={{ fontSize: '1.3rem' }}>📆</span>
+                Years
+              </h3>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                flexWrap: 'wrap',
+              }}>
+                <motion.button
+                  key="year-all"
+                  onClick={() => setSelectedYear('all')}
+                  whileHover={{ scale: 1.05, y: -3 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '20px',
+                    background: selectedYear === 'all' 
+                      ? 'linear-gradient(135deg, #4facfe, #00f2fe)' 
+                      : 'rgba(255, 255, 255, 0.15)',
+                    border: selectedYear === 'all' 
+                      ? '2px solid #4facfe' 
+                      : '1px solid rgba(255, 255, 255, 0.3)',
+                    color: 'white',
+                    fontSize: '0.8rem',
+                    fontWeight: selectedYear === 'all' ? '600' : '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: selectedYear === 'all' 
+                      ? '0 6px 20px rgba(79, 172, 254, 0.4)' 
+                      : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedYear !== 'all') {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedYear !== 'all') {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    }
+                  }}
                 >
-                  ✓
-                </motion.span>
-              )}
-            </motion.button>
-            
-            {getAvailableYears().map((year) => (
-              <motion.button
-                key={`year-${year}`}
-                onClick={() => setSelectedYear(year)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  fontSize: '0.85rem',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '20px',
-                  background: selectedYear === year 
-                    ? 'linear-gradient(45deg, #9b59b6, #8e44ad)' 
-                    : 'rgba(255, 255, 255, 0.1)',
-                  border: selectedYear === year 
-                    ? '2px solid #9b59b6' 
-                    : '1px solid rgba(255, 255, 255, 0.2)',
-                  color: selectedYear === year ? '#ffffff' : 'var(--text-primary)',
-                  fontWeight: selectedYear === year ? '600' : '400',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: selectedYear === year 
-                    ? '0 4px 15px rgba(155, 89, 182, 0.4)' 
-                    : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedYear !== year) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedYear !== year) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                  }
-                }}
+                  <span style={{ position: 'relative', zIndex: 1 }}>
+                    All Years
+                  </span>
+                  {selectedYear === 'all' && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 400 }}
+                      style={{
+                        position: 'absolute',
+                        top: '-2px',
+                        right: '-2px',
+                        width: '10px',
+                        height: '10px',
+                        background: '#4facfe',
+                        borderRadius: '50%',
+                        border: '2px solid white',
+                      }}
+                    />
+                  )}
+                </motion.button>
+                
+                {getAvailableYears().map((year) => (
+                  <motion.button
+                    key={`year-${year}`}
+                    onClick={() => setSelectedYear(year)}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '20px',
+                      background: selectedYear === year 
+                        ? 'linear-gradient(135deg, #4facfe, #00f2fe)' 
+                        : 'rgba(255, 255, 255, 0.15)',
+                      border: selectedYear === year 
+                        ? '2px solid #4facfe' 
+                        : '1px solid rgba(255, 255, 255, 0.3)',
+                      color: 'white',
+                      fontSize: '0.8rem',
+                      fontWeight: selectedYear === year ? '600' : '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      boxShadow: selectedYear === year 
+                        ? '0 6px 20px rgba(79, 172, 254, 0.4)' 
+                        : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                      backdropFilter: 'blur(10px)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedYear !== year) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedYear !== year) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                      }
+                    }}
+                  >
+                    <span style={{ position: 'relative', zIndex: 1 }}>
+                      {year}
+                    </span>
+                    {selectedYear === year && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 400 }}
+                        style={{
+                          position: 'absolute',
+                          top: '-2px',
+                          right: '-2px',
+                          width: '10px',
+                          height: '10px',
+                          background: '#4facfe',
+                          borderRadius: '50%',
+                          border: '2px solid white',
+                        }}
+                      />
+                    )}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Clear Filters Button */}
+            {(filter !== 'all' || selectedMonth !== 'all' || selectedYear !== 'all') && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                style={{ textAlign: 'center', marginTop: '2rem', width: '100%' }}
               >
-                <span>{year}</span>
-                {selectedYear === year && (
-                  <motion.span
+                <motion.button
+                  onClick={() => {
+                    setFilter('all');
+                    setSelectedMonth('all');
+                    setSelectedYear('all');
+                  }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    fontSize: '1rem',
+                    padding: '1rem 2rem',
+                    borderRadius: '50px',
+                    background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
+                    border: 'none',
+                    color: 'white',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 20px rgba(255, 107, 107, 0.4)',
+                    backdropFilter: 'blur(10px)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 25px rgba(255, 107, 107, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(255, 107, 107, 0.4)';
+                  }}
+                >
+                  <span style={{ position: 'relative', zIndex: 1 }}>
+                    🔄 Clear All Filters
+                  </span>
+                  <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    style={{ fontSize: '0.8rem' }}
-                  >
-                    ✓
-                  </motion.span>
-                )}
-              </motion.button>
-            ))}
+                    transition={{ delay: 0.2 }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'linear-gradient(45deg, rgba(255, 255, 255, 0.1), transparent)',
+                      borderRadius: '50px',
+                    }}
+                  />
+                </motion.button>
+              </motion.div>
+            )}
           </div>
         </div>
       </section>
@@ -581,7 +828,7 @@ const Gallery = () => {
             </div>
           ) : (
             <AnimatePresence>
-              {groupedImages.length === 0 ? (
+              {currentImages.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -609,93 +856,73 @@ const Gallery = () => {
                     color: 'var(--text-secondary)', 
                     fontSize: '1.1rem'
                   }}>
-                    {filter === 'all' 
+                    {filter === 'all' && selectedMonth === 'all' && selectedYear === 'all'
                       ? 'No images have been uploaded to the gallery yet' 
-                      : `No images found in "${categories.find(c => c.id === filter)?.label}" category`}
+                      : 'No images found with the selected filters'}
                   </p>
+                  {(filter !== 'all' || selectedMonth !== 'all' || selectedYear !== 'all') && (
+                    <button
+                      onClick={() => {
+                        setFilter('all');
+                        setSelectedMonth('all');
+                        setSelectedYear('all');
+                      }}
+                      style={{
+                        padding: '0.75rem 2rem',
+                        background: 'linear-gradient(45deg, #ff6b6b, #ee5a24)',
+                        border: 'none',
+                        borderRadius: '25px',
+                        color: 'white',
+                        fontSize: '1rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        marginTop: '1.5rem',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 5px 15px rgba(255, 107, 107, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      Clear All Filters
+                    </button>
+                  )}
                 </motion.div>
               ) : (
-                groupedImages.map((group, groupIndex) => (
+                <>
                   <motion.div
-                    key={`${group.year}-${group.month}`}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: groupIndex * 0.1 }}
+                    layout
                     style={{
-                      marginBottom: '3rem',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                      gap: '1.5rem',
                     }}
                   >
-                    {/* Month/Year Header */}
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.5, delay: groupIndex * 0.1 + 0.2 }}
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        padding: '1.5rem',
-                        borderRadius: '15px',
-                        marginBottom: '1.5rem',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
-                      }}
-                    >
-                      <div>
-                        <h2 style={{
-                          margin: '0',
-                          fontSize: '1.8rem',
-                          fontWeight: '600',
-                        }}>
-                          {group.monthName} {group.year}
-                        </h2>
-                        <p style={{
-                          margin: '0.25rem 0 0 0',
-                          opacity: 0.9,
-                          fontSize: '0.9rem',
-                        }}>
-                          {group.images.length} image{group.images.length !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        background: 'rgba(255, 255, 255, 0.2)',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '20px',
-                      }}>
-                        <span style={{ fontSize: '1.2rem' }}>📅</span>
-                        <span style={{ fontSize: '0.9rem' }}>
-                          {group.month}/{group.year}
-                        </span>
-                      </div>
-                    </motion.div>
-
-                    {/* Images Grid */}
-                    <motion.div
-                      layout
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                        gap: '1.5rem',
-                      }}
-                    >
-                      {group.images.map((image, index) => (
+                    {currentImages.map((image, index) => {
+                      // Get month and year for this image
+                      const imgMonth = image.upload_month || (image.created_at ? String(new Date(image.created_at).getMonth() + 1).padStart(2, '0') : null);
+                      const imgYear = image.upload_year || (image.created_at ? new Date(image.created_at).getFullYear() : null);
+                      const monthName = imgMonth ? getMonthName(imgMonth) : '';
+                      
+                      return (
                         <motion.div
                           key={image.id}
                           layout
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.8 }}
-                          transition={{ duration: 0.5, delay: groupIndex * 0.1 + index * 0.05 }}
+                          transition={{ duration: 0.5, delay: index * 0.1 }}
                           whileHover={{ scale: 1.03 }}
                           className="card"
                           style={{
                             cursor: 'pointer',
                             overflow: 'hidden',
                             padding: 0,
+                            position: 'relative',
                           }}
                           onClick={() => openLightbox(image)}
                         >
@@ -745,6 +972,60 @@ const Gallery = () => {
                                 transition: 'transform 0.3s ease',
                               }}
                             />
+                            
+                            {/* Month/Year Badge on Top */}
+                            {(imgMonth && imgYear) && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: index * 0.1 + 0.2 }}
+                                style={{
+                                  position: 'absolute',
+                                  top: '10px',
+                                  left: '10px',
+                                  background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9))',
+                                  color: 'white',
+                                  padding: '0.3rem 0.6rem',
+                                  borderRadius: '12px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '600',
+                                  backdropFilter: 'blur(10px)',
+                                  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  zIndex: 2,
+                                }}
+                              >
+                                <span style={{ fontSize: '0.8rem' }}>📅</span>
+                                <span>{monthName.slice(0, 3)} {imgYear}</span>
+                              </motion.div>
+                            )}
+                            
+                            {/* Category Badge */}
+                            <motion.div
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.3, delay: index * 0.1 + 0.3 }}
+                              style={{
+                                position: 'absolute',
+                                top: '10px',
+                                right: '10px',
+                                background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.9), rgba(238, 90, 36, 0.9))',
+                                color: 'white',
+                                padding: '0.3rem 0.6rem',
+                                borderRadius: '12px',
+                                fontSize: '0.7rem',
+                                fontWeight: '600',
+                                backdropFilter: 'blur(10px)',
+                                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+                                textTransform: 'capitalize',
+                                zIndex: 2,
+                              }}
+                            >
+                              {image.category}
+                            </motion.div>
+                            
                             <div style={{
                               position: 'absolute',
                               inset: 0,
@@ -778,10 +1059,155 @@ const Gallery = () => {
                             </div>
                           </div>
                         </motion.div>
-                      ))}
-                    </motion.div>
+                      );
+                    })}
                   </motion.div>
-                ))
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        marginTop: '3rem',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      {/* Previous Button */}
+                      <motion.button
+                        onClick={goToPreviousPage}
+                        disabled={currentPage === 1}
+                        whileHover={{ scale: currentPage === 1 ? 1 : 1.05 }}
+                        whileTap={{ scale: currentPage === 1 ? 1 : 0.95 }}
+                        style={{
+                          padding: '0.75rem 1rem',
+                          borderRadius: '12px',
+                          background: currentPage === 1 
+                            ? 'rgba(255, 255, 255, 0.1)' 
+                            : 'linear-gradient(45deg, #667eea, #764ba2)',
+                          border: currentPage === 1 
+                            ? '1px solid rgba(255, 255, 255, 0.2)' 
+                            : 'none',
+                          color: currentPage === 1 ? 'rgba(255, 255, 255, 0.5)' : 'white',
+                          fontSize: '0.9rem',
+                          fontWeight: '500',
+                          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.3s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                        }}
+                      >
+                        <span>←</span>
+                        Previous
+                      </motion.button>
+
+                      {/* Page Numbers */}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => {
+                        // Show first 3, last 3, and current with ellipsis
+                        if (
+                          pageNumber === 1 || 
+                          pageNumber === totalPages || 
+                          (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1) ||
+                          (totalPages > 5 && (
+                            (currentPage <= 3 && pageNumber <= 4) ||
+                            (currentPage > totalPages - 3 && pageNumber >= totalPages - 3)
+                          ))
+                        ) {
+                          return (
+                            <motion.button
+                              key={pageNumber}
+                              onClick={() => paginate(pageNumber)}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                background: currentPage === pageNumber 
+                                  ? 'linear-gradient(45deg, #ff6b6b, #ee5a24)' 
+                                  : 'rgba(255, 255, 255, 0.1)',
+                                border: currentPage === pageNumber 
+                                  ? 'none' 
+                                  : '1px solid rgba(255, 255, 255, 0.2)',
+                                color: 'white',
+                                fontSize: '0.9rem',
+                                fontWeight: currentPage === pageNumber ? '600' : '400',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                              }}
+                            >
+                              {pageNumber}
+                            </motion.button>
+                          );
+                        } else if (
+                          (pageNumber === 2 && currentPage > 4) ||
+                          (pageNumber === totalPages - 1 && currentPage < totalPages - 3)
+                        ) {
+                          return (
+                            <span key={pageNumber} style={{ 
+                              color: 'rgba(255, 255, 255, 0.5)', 
+                              fontSize: '1.2rem',
+                              fontWeight: 'bold'
+                            }}>
+                              ...
+                            </span>
+                          );
+                        }
+                        return null;
+                      })}
+
+                      {/* Next Button */}
+                      <motion.button
+                        onClick={goToNextPage}
+                        disabled={currentPage === totalPages}
+                        whileHover={{ scale: currentPage === totalPages ? 1 : 1.05 }}
+                        whileTap={{ scale: currentPage === totalPages ? 1 : 0.95 }}
+                        style={{
+                          padding: '0.75rem 1rem',
+                          borderRadius: '12px',
+                          background: currentPage === totalPages 
+                            ? 'rgba(255, 255, 255, 0.1)' 
+                            : 'linear-gradient(45deg, #667eea, #764ba2)',
+                          border: currentPage === totalPages 
+                            ? '1px solid rgba(255, 255, 255, 0.2)' 
+                            : 'none',
+                          color: currentPage === totalPages ? 'rgba(255, 255, 255, 0.5)' : 'white',
+                          fontSize: '0.9rem',
+                          fontWeight: '500',
+                          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.3s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                        }}
+                      >
+                        Next
+                        <span>→</span>
+                      </motion.button>
+                    </motion.div>
+                  )}
+
+                  {/* Page Info */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.5 }}
+                    style={{
+                      textAlign: 'center',
+                      marginTop: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    Showing {indexOfFirstImage + 1}-{Math.min(indexOfLastImage, filteredImages.length)} of {filteredImages.length} images
+                  </motion.div>
+                </>
               )}
             </AnimatePresence>
           )}
