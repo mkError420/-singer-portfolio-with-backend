@@ -24,7 +24,22 @@ const Music = () => {
         setLoading(true);
         const albumsData = await musicAPI.getAlbums();
         const singlesData = await musicAPI.getSingles();
-        setAlbums(albumsData);
+        
+        // Load tracks for each album
+        const albumsWithTracks = await Promise.all(
+          albumsData.map(async (album) => {
+            try {
+              const response = await fetch(`http://localhost:80443/madam-portfolio/backend/api/albums.php?album_id=${album.id}&include_tracks=1`);
+              const albumWithTracks = await response.json();
+              return albumWithTracks;
+            } catch (error) {
+              console.error(`Error loading tracks for album ${album.id}:`, error);
+              return { ...album, tracks: [] };
+            }
+          })
+        );
+        
+        setAlbums(albumsWithTracks);
         setSingles(singlesData);
         setError(null);
       } catch (err) {
@@ -54,9 +69,14 @@ const Music = () => {
     };
   }, [currentTrack]);
 
-  const playTrack = (track) => {
+  const handleTrackClick = (track) => {
     setCurrentTrack(track);
     setIsPlaying(true);
+    
+    // If track has YouTube URL, you could optionally open it or play preview
+    if (track.youtube_url) {
+      console.log('Track has YouTube URL:', track.youtube_url);
+    }
   };
 
   const togglePlayPause = () => {
@@ -350,7 +370,7 @@ const Music = () => {
                     onClick={() => {
                       const currentIndex = allTracks.findIndex(t => t.id === currentTrack.id);
                       const prevIndex = currentIndex > 0 ? currentIndex - 1 : allTracks.length - 1;
-                      playTrack(allTracks[prevIndex]);
+                      handleTrackClick(allTracks[prevIndex]);
                     }}
                     style={{
                       background: 'none',
@@ -381,7 +401,7 @@ const Music = () => {
                     onClick={() => {
                       const currentIndex = allTracks.findIndex(t => t.id === currentTrack.id);
                       const nextIndex = currentIndex < allTracks.length - 1 ? currentIndex + 1 : 0;
-                      playTrack(allTracks[nextIndex]);
+                      handleTrackClick(allTracks[nextIndex]);
                     }}
                     style={{
                       background: 'none',
@@ -505,65 +525,92 @@ const Music = () => {
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                  {album.tracks && album.tracks.map((track, trackIndex) => (
-                    <div
-                      key={track.id}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '0.5rem 0',
-                        cursor: 'pointer',
-                        borderRadius: '8px',
-                        transition: 'background 0.3s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                      }}
-                      onClick={() => playTrack(track)}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                          {trackIndex + 1}
-                        </span>
-                        <div>
-                          <p style={{ 
-                            color: currentTrack?.id === track.id ? 'var(--accent-color)' : 'var(--text-primary)', 
-                            margin: 0,
-                            fontSize: '0.95rem'
-                          }}>
-                            {track.title}
-                          </p>
-                          <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>
-                            {track.artist}
-                          </p>
+                  {album.tracks && album.tracks.length > 0 ? (
+                    album.tracks.map((track, trackIndex) => (
+                      <div
+                        key={track.id || trackIndex}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '0.5rem 0',
+                          cursor: 'pointer',
+                          borderRadius: '8px',
+                          transition: 'background 0.3s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
+                        onClick={() => handleTrackClick(track)}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                            {track.track_number || trackIndex + 1}
+                          </span>
+                          <div>
+                            <p style={{ 
+                              color: currentTrack?.id === track.id ? 'var(--accent-color)' : 'var(--text-primary)', 
+                              margin: 0,
+                              fontSize: '0.95rem'
+                            }}>
+                              {track.title}
+                            </p>
+                            <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>
+                              {track.duration || 'Unknown duration'}
+                            </p>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          {track.youtube_url && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(track.youtube_url, '_blank');
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-secondary)',
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                padding: '0.25rem',
+                              }}
+                              title="Open in YouTube"
+                            >
+                              🎵
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTrackClick(track);
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: currentTrack?.id === track.id && isPlaying ? 'var(--accent-color)' : 'var(--text-secondary)',
+                              fontSize: '1rem',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {currentTrack?.id === track.id && isPlaying ? '⏸' : '▶'}
+                          </button>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                          {track.duration}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            playTrack(track);
-                          }}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: currentTrack?.id === track.id && isPlaying ? 'var(--accent-color)' : 'var(--text-secondary)',
-                            fontSize: '1rem',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {currentTrack?.id === track.id && isPlaying ? '⏸' : '▶'}
-                        </button>
-                      </div>
+                    ))
+                  ) : (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      color: 'var(--text-muted)', 
+                      padding: '2rem',
+                      fontStyle: 'italic'
+                    }}>
+                      No tracks available for this album
                     </div>
-                  ))}
+                  )}
                 </div>
               </motion.div>
             ))
@@ -653,7 +700,7 @@ const Music = () => {
                   {single.release_date} • {single.duration}
                 </p>
                 <button
-                  onClick={() => playTrack(single)}
+                  onClick={() => handleTrackClick(single)}
                   className="btn btn-secondary btn-sm"
                   style={{ width: '100%' }}
                 >

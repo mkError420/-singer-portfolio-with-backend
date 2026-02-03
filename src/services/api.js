@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'http://localhost/madam-portfolio/backend/api',
+  baseURL: 'http://localhost:80443/madam-portfolio/backend/api/',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

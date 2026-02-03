@@ -272,6 +272,15 @@ $currentUser = $auth->getCurrentUser();
             flex: 1;
         }
         
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
         .file-upload {
             margin-bottom: 1rem;
         }
@@ -376,7 +385,9 @@ $currentUser = $auth->getCurrentUser();
                             <option value="">Select Category</option>
                         </select>
                         <button type="button" class="btn btn-sm" onclick="showAddCategoryModal()">+ Add New</button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="refreshCategories()">🔄 Refresh</button>
                     </div>
+                    <small id="category-status" style="color: #666; font-size: 12px;">Loading categories...</small>
                 </div>
                 
                 <div class="form-group">
@@ -472,25 +483,73 @@ $currentUser = $auth->getCurrentUser();
         
         // Load categories
         async function loadCategories() {
+            const statusElement = document.getElementById('category-status');
+            if (statusElement) {
+                statusElement.textContent = 'Loading categories...';
+                statusElement.style.color = '#666';
+            }
+            
             try {
+                console.log('Loading categories...');
                 const response = await fetch('../api/categories.php');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 categories = await response.json();
+                console.log('Categories loaded:', categories);
                 populateCategorySelect();
+                
+                if (statusElement) {
+                    statusElement.textContent = `${categories.length} categories loaded`;
+                    statusElement.style.color = '#28a745';
+                }
             } catch (error) {
                 console.error('Error loading categories:', error);
+                
+                if (statusElement) {
+                    statusElement.textContent = 'Error loading categories';
+                    statusElement.style.color = '#dc3545';
+                }
+                
                 // Fallback to default categories
                 categories = [
                     { name: 'album', description: 'Studio Albums' },
                     { name: 'acoustic', description: 'Acoustic Versions' }
                 ];
+                console.log('Using fallback categories:', categories);
                 populateCategorySelect();
+                
+                if (statusElement) {
+                    statusElement.textContent = 'Using default categories';
+                    statusElement.style.color = '#ffc107';
+                }
             }
+        }
+        
+        // Refresh categories manually
+        async function refreshCategories() {
+            console.log('Manually refreshing categories...');
+            await loadCategories();
         }
         
         // Populate category select dropdown
         function populateCategorySelect() {
+            console.log('Populating category select with:', categories);
             const select = document.getElementById('category');
+            
+            if (!select) {
+                console.error('Category select element not found!');
+                return;
+            }
+            
             select.innerHTML = '<option value="">Select Category</option>';
+            
+            if (!categories || categories.length === 0) {
+                console.warn('No categories to populate');
+                return;
+            }
             
             categories.forEach(category => {
                 const option = document.createElement('option');
@@ -498,6 +557,8 @@ $currentUser = $auth->getCurrentUser();
                 option.textContent = category.name;
                 select.appendChild(option);
             });
+            
+            console.log('Category select populated. Options count:', select.options.length);
         }
         
         // Category modal functions
@@ -521,7 +582,9 @@ $currentUser = $auth->getCurrentUser();
                 return;
             }
             
-            albums.forEach(album => {
+            albums.forEach((album, index) => {
+                console.log(`Rendering album ${index + 1}:`, album);
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>
@@ -531,9 +594,13 @@ $currentUser = $auth->getCurrentUser();
                                  onerror="console.log('Failed to load: ${album.cover_image}'); this.src='https://via.placeholder.com/60x60/2a2a2a/ffffff?text=' + encodeURIComponent('${album.title}')">
                         ` : `<img src="https://via.placeholder.com/60x60" alt="${album.title}" class="album-cover">`}
                     </td>
-                    <td>${album.title}</td>
-                    <td>${album.year}</td>
-                    <td>${album.category}</td>
+                    <td><strong>${album.title || 'N/A'}</strong></td>
+                    <td>${album.year || 'N/A'}</td>
+                    <td>
+                        <span class="category-badge" style="background: #e9ecef; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                            ${album.category || 'No Category'}
+                        </span>
+                    </td>
                     <td>${album.track_count || 0}</td>
                     <td>
                         <div class="table-actions">
@@ -543,6 +610,8 @@ $currentUser = $auth->getCurrentUser();
                     </td>
                 `;
                 tbody.appendChild(row);
+                
+                console.log(`Album ${index + 1} category:`, album.category);
             });
             
             console.log('Albums rendered successfully');
@@ -702,15 +771,22 @@ $currentUser = $auth->getCurrentUser();
         document.getElementById('albumForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            const categoryValue = document.getElementById('category').value;
+            console.log('Selected category value:', categoryValue);
+            console.log('Category element:', document.getElementById('category'));
+            console.log('Category options count:', document.getElementById('category').options.length);
+            
             const formData = new FormData();
             const albumData = {
                 title: document.getElementById('title').value,
                 year: document.getElementById('year').value,
-                category: document.getElementById('category').value,
+                category: categoryValue,
                 description: document.getElementById('description').value,
                 cover_image: document.getElementById('coverImagePath').value,
                 tracks: getTracksData()
             };
+            
+            console.log('Album data being sent:', albumData);
             
             // Handle image upload
             const imageFile = document.getElementById('coverImage').files[0];
@@ -786,11 +862,16 @@ $currentUser = $auth->getCurrentUser();
                 });
                 
                 if (response.ok) {
+                    const result = await response.json();
+                    console.log('Category added successfully:', result);
                     alert('Category added successfully!');
                     closeCategoryModal();
-                    loadCategories(); // Reload categories
+                    await loadCategories(); // Reload categories
+                    console.log('Categories reloaded after adding new category');
                 } else {
-                    alert('Error adding category');
+                    const errorText = await response.text();
+                    console.error('Error adding category:', errorText);
+                    alert('Error adding category: ' + errorText);
                 }
             } catch (error) {
                 console.error('Error adding category:', error);

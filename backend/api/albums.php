@@ -1,5 +1,16 @@
 <?php
+// CORS Headers
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header("Content-Type: application/json");
+
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 require_once __DIR__ . '/../config/database.php';
 
 $database = new Database();
@@ -42,29 +53,34 @@ function getAlbums($db) {
             $trackStmt = $db->prepare($trackQuery);
             $trackStmt->execute([$albumId]);
             $album['tracks'] = $trackStmt->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode($album);
+        } else {
+            http_response_code(404);
+            echo json_encode(['message' => 'Album not found']);
         }
+    } else {
+        // Get all albums
+        $query = "SELECT a.*, 
+                        (SELECT COUNT(*) FROM tracks t WHERE t.album_id = a.id AND t.status = 'active') as track_count
+                 FROM albums a 
+                 WHERE a.status = 'active' 
+                 ORDER BY a.year DESC, a.title ASC";
         
-        echo json_encode($album);
-        return;
+        $stmt = $db->prepare($query);
+        $stmt->execute();
+        
+        $albums = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode($albums);
     }
-    
-    // Get all albums
-    $query = "SELECT a.*, 
-                     (SELECT COUNT(*) FROM tracks t WHERE t.album_id = a.id AND t.status = 'active') as track_count
-              FROM albums a 
-              WHERE a.status = 'active' 
-              ORDER BY a.year DESC, a.title ASC";
-    
-    $stmt = $db->prepare($query);
-    $stmt->execute();
-    
-    $albums = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    echo json_encode($albums);
 }
 
 function createAlbum($db) {
     $data = json_decode(file_get_contents("php://input"));
+    
+    // Debug logging
+    error_log("Album creation data received: " . json_encode($data));
+    error_log("Category value: " . ($data->category ?? 'NULL'));
     
     try {
         // Start transaction
@@ -76,11 +92,19 @@ function createAlbum($db) {
         
         $stmt = $db->prepare($query);
         
-        $stmt->bindParam(':title', $data->title);
-        $stmt->bindParam(':year', $data->year);
-        $stmt->bindParam(':category', $data->category);
-        $stmt->bindParam(':cover_image', $data->cover_image);
-        $stmt->bindParam(':description', $data->description);
+        $title = $data->title ?? '';
+        $year = $data->year ?? '';
+        $category = $data->category ?? '';
+        $cover_image = $data->cover_image ?? '';
+        $description = $data->description ?? '';
+        
+        error_log("Prepared values - Title: $title, Year: $year, Category: '$category'");
+        
+        $stmt->bindParam(':title', $title);
+        $stmt->bindParam(':year', $year);
+        $stmt->bindParam(':category', $category);
+        $stmt->bindParam(':cover_image', $cover_image);
+        $stmt->bindParam(':description', $description);
         
         if ($stmt->execute()) {
             $albumId = $db->lastInsertId();
