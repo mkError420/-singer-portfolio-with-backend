@@ -25,11 +25,16 @@ const Music = () => {
         const albumsData = await musicAPI.getAlbums();
         const singlesData = await musicAPI.getSingles();
         
+        // Handle empty singles gracefully
+        const singles = Array.isArray(singlesData) ? singlesData : [];
+        console.log('Albums loaded:', albumsData.length);
+        console.log('Singles loaded:', singles.length);
+        
         // Load tracks for each album
         const albumsWithTracks = await Promise.all(
           albumsData.map(async (album) => {
             try {
-              const response = await fetch(`http://localhost:80443/madam-portfolio/backend/api/albums.php?album_id=${album.id}&include_tracks=1`);
+              const response = await fetch(`http://localhost/madam-portfolio/backend/api/albums_fixed.php?album_id=${album.id}&include_tracks=1`);
               const albumWithTracks = await response.json();
               return albumWithTracks;
             } catch (error) {
@@ -40,7 +45,7 @@ const Music = () => {
         );
         
         setAlbums(albumsWithTracks);
-        setSingles(singlesData);
+        setSingles(singles);
         setError(null);
       } catch (err) {
         console.error('Error loading music data:', err);

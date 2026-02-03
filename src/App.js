@@ -12,6 +12,8 @@ import Preloader from './components/Preloader';
 import Home from './pages/Home';
 import About from './pages/About';
 import Music from './pages/Music';
+import MusicDebug from './pages/MusicDebug';
+import MusicFinalTest from './pages/MusicFinalTest';
 import Videos from './pages/Videos';
 import Gallery from './pages/Gallery';
 import Tour from './pages/Tour';
@@ -32,6 +34,8 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/music" element={<Music />} />
+            <Route path="/music-debug" element={<MusicDebug />} />
+            <Route path="/music-final-test" element={<MusicFinalTest />} />
             <Route path="/videos" element={<Videos />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/tour" element={<Tour />} />

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'http://localhost:80443/madam-portfolio/backend/api/',
+  baseURL: '/madam-portfolio/backend/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -31,14 +31,17 @@ api.interceptors.response.use(
   }
 );
 
-// API service functions
+// API service functions - using full URL for albums (temporary fix)
 export const musicAPI = {
-  getAlbums: () => api.get('/albums'),
-  getSingles: () => api.get('/singles'),
+  getAlbums: () => {
+    // Use full URL to bypass proxy issues
+    return axios.get('http://localhost/madam-portfolio/backend/api/albums_fixed.php');
+  },
+  getSingles: () => api.get('/singles.php'),
   getAllMusic: async () => {
     const [albums, singles] = await Promise.all([
-      api.get('/albums'),
-      api.get('/singles')
+      axios.get('http://localhost/madam-portfolio/backend/api/albums_fixed.php'),
+      api.get('/singles.php')
     ]);
     return { albums, singles };
   },
