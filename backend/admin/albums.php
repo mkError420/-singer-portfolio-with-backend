@@ -236,6 +236,42 @@ $currentUser = $auth->getCurrentUser();
             border-radius: 5px;
         }
         
+        .track-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        
+        .track-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .track-title {
+            flex: 2;
+        }
+        
+        .track-youtube {
+            flex: 2;
+        }
+        
+        .track-duration {
+            flex: 1;
+        }
+        
+        .category-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .category-input-group select {
+            flex: 1;
+        }
+        
         .file-upload {
             margin-bottom: 1rem;
         }
@@ -335,10 +371,12 @@ $currentUser = $auth->getCurrentUser();
                 
                 <div class="form-group">
                     <label for="category">Category</label>
-                    <select id="category" name="category" required>
-                        <option value="album">Album</option>
-                        <option value="acoustic">Acoustic</option>
-                    </select>
+                    <div class="category-input-group">
+                        <select id="category" name="category" required>
+                            <option value="">Select Category</option>
+                        </select>
+                        <button type="button" class="btn btn-sm" onclick="showAddCategoryModal()">+ Add New</button>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -356,6 +394,22 @@ $currentUser = $auth->getCurrentUser();
                     <input type="hidden" id="coverImagePath" name="cover_image">
                 </div>
                 
+                <!-- Tracks Section -->
+                <div class="form-group">
+                    <label>Tracks</label>
+                    <div id="tracksContainer">
+                        <div class="track-item">
+                            <div class="track-row">
+                                <input type="text" placeholder="Track title" class="track-title">
+                                <input type="text" placeholder="YouTube URL" class="track-youtube">
+                                <input type="text" placeholder="Duration (e.g., 3:45)" class="track-duration">
+                                <button type="button" class="btn btn-sm btn-danger" onclick="removeTrack(this)">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm" onclick="addTrack()">+ Add Track</button>
+                </div>
+                
                 <div class="form-actions">
                     <button type="button" class="btn" onclick="closeModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Album</button>
@@ -364,25 +418,108 @@ $currentUser = $auth->getCurrentUser();
         </div>
     </div>
     
+    <!-- Add Category Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Category</h2>
+                <span class="close" onclick="closeCategoryModal()">&times;</span>
+            </div>
+            <form id="categoryForm">
+                <div class="form-group">
+                    <label for="categoryName">Category Name</label>
+                    <input type="text" id="categoryName" name="categoryName" required 
+                           placeholder="e.g., Rock, Pop, Jazz, Classical">
+                </div>
+                
+                <div class="form-group">
+                    <label for="categoryDescription">Description (Optional)</label>
+                    <textarea id="categoryDescription" name="categoryDescription" 
+                              placeholder="Brief description of this category"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn" onclick="closeCategoryModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <script>
         let albums = [];
         let editingAlbum = null;
+        let categories = [];
         
         // Load albums
         async function loadAlbums() {
             try {
+                console.log('Loading albums...');
                 const response = await fetch('../api/albums.php');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 albums = await response.json();
+                console.log('Albums loaded:', albums);
                 renderAlbums();
             } catch (error) {
                 console.error('Error loading albums:', error);
+                alert('Error loading albums: ' + error.message);
             }
+        }
+        
+        // Load categories
+        async function loadCategories() {
+            try {
+                const response = await fetch('../api/categories.php');
+                categories = await response.json();
+                populateCategorySelect();
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                // Fallback to default categories
+                categories = [
+                    { name: 'album', description: 'Studio Albums' },
+                    { name: 'acoustic', description: 'Acoustic Versions' }
+                ];
+                populateCategorySelect();
+            }
+        }
+        
+        // Populate category select dropdown
+        function populateCategorySelect() {
+            const select = document.getElementById('category');
+            select.innerHTML = '<option value="">Select Category</option>';
+            
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.name;
+                option.textContent = category.name;
+                select.appendChild(option);
+            });
+        }
+        
+        // Category modal functions
+        function showAddCategoryModal() {
+            document.getElementById('categoryModal').style.display = 'block';
+            document.getElementById('categoryForm').reset();
+        }
+        
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').style.display = 'none';
         }
         
         // Render albums table
         function renderAlbums() {
+            console.log('Rendering albums:', albums);
             const tbody = document.getElementById('albums-table');
             tbody.innerHTML = '';
+            
+            if (!albums || albums.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No albums found</td></tr>';
+                return;
+            }
             
             albums.forEach(album => {
                 const row = document.createElement('tr');
@@ -407,6 +544,8 @@ $currentUser = $auth->getCurrentUser();
                 `;
                 tbody.appendChild(row);
             });
+            
+            console.log('Albums rendered successfully');
         }
         
         // Open modal
@@ -425,7 +564,7 @@ $currentUser = $auth->getCurrentUser();
         }
         
         // Edit album
-        function editAlbum(id) {
+        async function editAlbum(id) {
             const album = albums.find(a => a.id === id);
             if (album) {
                 editingAlbum = album;
@@ -439,6 +578,16 @@ $currentUser = $auth->getCurrentUser();
                     document.getElementById('imagePreview').src = '../' + album.cover_image;
                     document.getElementById('imagePreview').style.display = 'block';
                     document.getElementById('coverImagePath').value = album.cover_image;
+                }
+                
+                // Load existing tracks
+                try {
+                    const tracksResponse = await fetch(`../api/albums.php?album_id=${id}&include_tracks=1`);
+                    const albumWithTracks = await tracksResponse.json();
+                    loadTracksToForm(albumWithTracks.tracks || []);
+                } catch (error) {
+                    console.error('Error loading tracks:', error);
+                    loadTracksToForm([]); // Load empty tracks if error
                 }
                 
                 document.getElementById('modalTitle').textContent = 'Edit Album';
@@ -482,6 +631,73 @@ $currentUser = $auth->getCurrentUser();
             }
         }
         
+        // Track management functions
+        function addTrack() {
+            const container = document.getElementById('tracksContainer');
+            const trackItem = document.createElement('div');
+            trackItem.className = 'track-item';
+            trackItem.innerHTML = `
+                <div class="track-row">
+                    <input type="text" placeholder="Track title" class="track-title">
+                    <input type="text" placeholder="YouTube URL" class="track-youtube">
+                    <input type="text" placeholder="Duration (e.g., 3:45)" class="track-duration">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeTrack(this)">Remove</button>
+                </div>
+            `;
+            container.appendChild(trackItem);
+        }
+        
+        function removeTrack(button) {
+            const trackItem = button.closest('.track-item');
+            trackItem.remove();
+        }
+        
+        function getTracksData() {
+            const tracks = [];
+            const trackItems = document.querySelectorAll('.track-item');
+            
+            trackItems.forEach((item, index) => {
+                const title = item.querySelector('.track-title').value.trim();
+                const youtube = item.querySelector('.track-youtube').value.trim();
+                const duration = item.querySelector('.track-duration').value.trim();
+                
+                if (title) {
+                    tracks.push({
+                        title: title,
+                        youtube_url: youtube,
+                        duration: duration,
+                        track_number: index + 1
+                    });
+                }
+            });
+            
+            return tracks;
+        }
+        
+        function loadTracksToForm(tracks) {
+            const container = document.getElementById('tracksContainer');
+            container.innerHTML = '';
+            
+            if (tracks && tracks.length > 0) {
+                tracks.forEach(track => {
+                    const trackItem = document.createElement('div');
+                    trackItem.className = 'track-item';
+                    trackItem.innerHTML = `
+                        <div class="track-row">
+                            <input type="text" placeholder="Track title" class="track-title" value="${track.title || ''}">
+                            <input type="text" placeholder="YouTube URL" class="track-youtube" value="${track.youtube_url || ''}">
+                            <input type="text" placeholder="Duration (e.g., 3:45)" class="track-duration" value="${track.duration || ''}">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeTrack(this)">Remove</button>
+                        </div>
+                    `;
+                    container.appendChild(trackItem);
+                });
+            } else {
+                // Add one empty track
+                addTrack();
+            }
+        }
+        
         // Handle form submission
         document.getElementById('albumForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -492,7 +708,8 @@ $currentUser = $auth->getCurrentUser();
                 year: document.getElementById('year').value,
                 category: document.getElementById('category').value,
                 description: document.getElementById('description').value,
-                cover_image: document.getElementById('coverImagePath').value
+                cover_image: document.getElementById('coverImagePath').value,
+                tracks: getTracksData()
             };
             
             // Handle image upload
@@ -534,10 +751,15 @@ $currentUser = $auth->getCurrentUser();
                 });
                 
                 if (response.ok) {
+                    const result = await response.json();
+                    console.log('Album saved successfully:', result);
+                    alert(editingAlbum ? 'Album updated successfully!' : 'Album added successfully!');
                     closeModal();
                     loadAlbums();
                 } else {
-                    alert('Error saving album');
+                    const errorText = await response.text();
+                    console.error('Error saving album:', errorText);
+                    alert('Error saving album: ' + errorText);
                 }
             } catch (error) {
                 console.error('Error saving album:', error);
@@ -545,8 +767,42 @@ $currentUser = $auth->getCurrentUser();
             }
         });
         
-        // Load albums when page loads
-        document.addEventListener('DOMContentLoaded', loadAlbums);
+        // Handle category form submission
+        document.getElementById('categoryForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const categoryData = {
+                name: document.getElementById('categoryName').value,
+                description: document.getElementById('categoryDescription').value
+            };
+            
+            try {
+                const response = await fetch('../api/categories.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(categoryData)
+                });
+                
+                if (response.ok) {
+                    alert('Category added successfully!');
+                    closeCategoryModal();
+                    loadCategories(); // Reload categories
+                } else {
+                    alert('Error adding category');
+                }
+            } catch (error) {
+                console.error('Error adding category:', error);
+                alert('Error adding category');
+            }
+        });
+        
+        // Load albums and categories when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAlbums();
+            loadCategories();
+        });
     </script>
 </body>
 </html>

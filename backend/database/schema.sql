@@ -44,6 +44,16 @@ CREATE TABLE IF NOT EXISTS tracks (
     FOREIGN KEY (album_id) REFERENCES albums(id) ON DELETE SET NULL
 );
 
+-- Album categories table
+CREATE TABLE IF NOT EXISTS album_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 -- Singles table (for standalone singles)
 CREATE TABLE IF NOT EXISTS singles (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -148,3 +158,14 @@ INSERT INTO singles (title, duration, artist, release_date) VALUES
 ('Summer Vibes', '3:22', 'Artist Name', '2024'),
 ('Winter\'s Tale', '4:08', 'Artist Name', '2023')
 ON DUPLICATE KEY UPDATE title = title;
+
+-- Insert default album categories
+INSERT INTO album_categories (name, description) VALUES 
+('album', 'Studio Albums - Full-length releases'),
+('acoustic', 'Acoustic Versions - Unplugged performances'),
+('live', 'Live Recordings - Concert performances'),
+('remix', 'Remixes - Reimagined versions'),
+('compilation', 'Compilations - Collection of tracks'),
+('ep', 'EPs - Extended plays'),
+('single', 'Singles - Individual releases')
+ON DUPLICATE KEY UPDATE name = name;

@@ -26,6 +26,29 @@ switch ($method) {
 }
 
 function getAlbums($db) {
+    // Check if requesting specific album with tracks
+    if (isset($_GET['album_id']) && isset($_GET['include_tracks'])) {
+        $albumId = $_GET['album_id'];
+        
+        // Get album details
+        $query = "SELECT * FROM albums WHERE id = ? AND status = 'active'";
+        $stmt = $db->prepare($query);
+        $stmt->execute([$albumId]);
+        $album = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($album) {
+            // Get tracks for this album
+            $trackQuery = "SELECT * FROM tracks WHERE album_id = ? AND status = 'active' ORDER BY track_number ASC";
+            $trackStmt = $db->prepare($trackQuery);
+            $trackStmt->execute([$albumId]);
+            $album['tracks'] = $trackStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        
+        echo json_encode($album);
+        return;
+    }
+    
+    // Get all albums
     $query = "SELECT a.*, 
                      (SELECT COUNT(*) FROM tracks t WHERE t.album_id = a.id AND t.status = 'active') as track_count
               FROM albums a 
@@ -37,62 +60,114 @@ function getAlbums($db) {
     
     $albums = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get tracks for each album
-    foreach ($albums as &$album) {
-        $trackQuery = "SELECT * FROM tracks WHERE album_id = ? AND status = 'active' ORDER BY track_number ASC";
-        $trackStmt = $db->prepare($trackQuery);
-        $trackStmt->execute([$album['id']]);
-        $album['tracks'] = $trackStmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-    
     echo json_encode($albums);
 }
 
 function createAlbum($db) {
     $data = json_decode(file_get_contents("php://input"));
     
-    $query = "INSERT INTO albums (title, year, category, cover_image, description) 
-              VALUES (:title, :year, :category, :cover_image, :description)";
-    
-    $stmt = $db->prepare($query);
-    
-    $stmt->bindParam(':title', $data->title);
-    $stmt->bindParam(':year', $data->year);
-    $stmt->bindParam(':category', $data->category);
-    $stmt->bindParam(':cover_image', $data->cover_image);
-    $stmt->bindParam(':description', $data->description);
-    
-    if ($stmt->execute()) {
-        echo json_encode(['message' => 'Album created successfully', 'id' => $db->lastInsertId()]);
-    } else {
-        echo json_encode(['message' => 'Album creation failed']);
+    try {
+        // Start transaction
+        $db->beginTransaction();
+        
+        // Insert album
+        $query = "INSERT INTO albums (title, year, category, cover_image, description) 
+                  VALUES (:title, :year, :category, :cover_image, :description)";
+        
+        $stmt = $db->prepare($query);
+        
+        $stmt->bindParam(':title', $data->title);
+        $stmt->bindParam(':year', $data->year);
+        $stmt->bindParam(':category', $data->category);
+        $stmt->bindParam(':cover_image', $data->cover_image);
+        $stmt->bindParam(':description', $data->description);
+        
+        if ($stmt->execute()) {
+            $albumId = $db->lastInsertId();
+            
+            // Insert tracks if provided
+            if (!empty($data->tracks)) {
+                foreach ($data->tracks as $track) {
+                    $trackQuery = "INSERT INTO tracks (album_id, title, youtube_url, duration, track_number, status) 
+                                  VALUES (:album_id, :title, :youtube_url, :duration, :track_number, 'active')";
+                    
+                    $trackStmt = $db->prepare($trackQuery);
+                    $trackStmt->bindParam(':album_id', $albumId);
+                    $trackStmt->bindParam(':title', $track->title);
+                    $trackStmt->bindParam(':youtube_url', $track->youtube_url);
+                    $trackStmt->bindParam(':duration', $track->duration);
+                    $trackStmt->bindParam(':track_number', $track->track_number);
+                    $trackStmt->execute();
+                }
+            }
+            
+            $db->commit();
+            echo json_encode(['message' => 'Album created successfully', 'id' => $albumId]);
+        } else {
+            throw new Exception('Album creation failed');
+        }
+    } catch (Exception $e) {
+        $db->rollBack();
+        echo json_encode(['message' => 'Album creation failed: ' . $e->getMessage()]);
     }
 }
 
 function updateAlbum($db) {
     $data = json_decode(file_get_contents("php://input"));
     
-    $query = "UPDATE albums SET 
-              title = :title, 
-              year = :year, 
-              category = :category, 
-              cover_image = :cover_image, 
-              description = :description 
-              WHERE id = :id";
-    
-    $stmt = $db->prepare($query);
-    
-    $stmt->bindParam(':title', $data->title);
-    $stmt->bindParam(':year', $data->year);
-    $stmt->bindParam(':category', $data->category);
-    $stmt->bindParam(':cover_image', $data->cover_image);
-    $stmt->bindParam(':description', $data->description);
-    $stmt->bindParam(':id', $data->id);
-    
-    if ($stmt->execute()) {
-        echo json_encode(['message' => 'Album updated successfully']);
-    } else {
-        echo json_encode(['message' => 'Album update failed']);
+    try {
+        // Start transaction
+        $db->beginTransaction();
+        
+        // Update album
+        $query = "UPDATE albums SET 
+                  title = :title, 
+                  year = :year, 
+                  category = :category, 
+                  cover_image = :cover_image, 
+                  description = :description 
+                  WHERE id = :id";
+        
+        $stmt = $db->prepare($query);
+        
+        $stmt->bindParam(':title', $data->title);
+        $stmt->bindParam(':year', $data->year);
+        $stmt->bindParam(':category', $data->category);
+        $stmt->bindParam(':cover_image', $data->cover_image);
+        $stmt->bindParam(':description', $data->description);
+        $stmt->bindParam(':id', $data->id);
+        
+        if ($stmt->execute()) {
+            // Delete existing tracks for this album
+            $deleteTracksQuery = "DELETE FROM tracks WHERE album_id = :album_id";
+            $deleteStmt = $db->prepare($deleteTracksQuery);
+            $deleteStmt->bindParam(':album_id', $data->id);
+            $deleteStmt->execute();
+            
+            // Insert new tracks if provided
+            if (!empty($data->tracks)) {
+                foreach ($data->tracks as $track) {
+                    $trackQuery = "INSERT INTO tracks (album_id, title, youtube_url, duration, track_number, status) 
+                                  VALUES (:album_id, :title, :youtube_url, :duration, :track_number, 'active')";
+                    
+                    $trackStmt = $db->prepare($trackQuery);
+                    $trackStmt->bindParam(':album_id', $data->id);
+                    $trackStmt->bindParam(':title', $track->title);
+                    $trackStmt->bindParam(':youtube_url', $track->youtube_url);
+                    $trackStmt->bindParam(':duration', $track->duration);
+                    $trackStmt->bindParam(':track_number', $track->track_number);
+                    $trackStmt->execute();
+                }
+            }
+            
+            $db->commit();
+            echo json_encode(['message' => 'Album updated successfully']);
+        } else {
+            throw new Exception('Album update failed');
+        }
+    } catch (Exception $e) {
+        $db->rollBack();
+        echo json_encode(['message' => 'Album update failed: ' . $e->getMessage()]);
     }
 }
 
