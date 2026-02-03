@@ -12,6 +12,12 @@ const Music = () => {
   const [error, setError] = useState(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [currentVideoUrl, setCurrentVideoUrl] = useState('');
+  
+  // Pagination states
+  const [albumsCurrentPage, setAlbumsCurrentPage] = useState(1);
+  const [singlesCurrentPage, setSinglesCurrentPage] = useState(1);
+  const albumsPerPage = 6;
+  const singlesPerPage = 9;
 
   // Categories for filtering
   const categories = [
@@ -159,6 +165,32 @@ const Music = () => {
     const matchesCategory = selectedCategory === 'all' || selectedCategory === 'singles';
     return matchesSearch && matchesCategory;
   });
+
+  // Pagination calculations for albums
+  const albumsIndexOfLastItem = albumsCurrentPage * albumsPerPage;
+  const albumsIndexOfFirstItem = albumsIndexOfLastItem - albumsPerPage;
+  const currentAlbums = filteredAlbums.slice(albumsIndexOfFirstItem, albumsIndexOfLastItem);
+  const albumsTotalPages = Math.ceil(filteredAlbums.length / albumsPerPage);
+
+  // Pagination calculations for singles
+  const singlesIndexOfLastItem = singlesCurrentPage * singlesPerPage;
+  const singlesIndexOfFirstItem = singlesIndexOfLastItem - singlesPerPage;
+  const currentSingles = filteredSingles.slice(singlesIndexOfFirstItem, singlesIndexOfLastItem);
+  const singlesTotalPages = Math.ceil(filteredSingles.length / singlesPerPage);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setAlbumsCurrentPage(1);
+    setSinglesCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
+
+  // Pagination functions
+  const albumsPaginate = (pageNumber) => setAlbumsCurrentPage(pageNumber);
+  const singlesPaginate = (pageNumber) => setSinglesCurrentPage(pageNumber);
+  const albumsGoToPreviousPage = () => setAlbumsCurrentPage(prev => Math.max(prev - 1, 1));
+  const albumsGoToNextPage = () => setAlbumsCurrentPage(prev => Math.min(prev + 1, albumsTotalPages));
+  const singlesGoToPreviousPage = () => setSinglesCurrentPage(prev => Math.max(prev - 1, 1));
+  const singlesGoToNextPage = () => setSinglesCurrentPage(prev => Math.min(prev + 1, singlesTotalPages));
 
   if (loading) {
     return (
@@ -384,8 +416,8 @@ const Music = () => {
               gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
               gap: '2rem',
             }}>
-              {filteredAlbums.length > 0 ? (
-                filteredAlbums.map((album, index) => (
+              {currentAlbums.length > 0 ? (
+                currentAlbums.map((album, index) => (
                   <motion.div
                     key={album.id}
                     initial={{ opacity: 0, y: 50 }}
@@ -547,6 +579,152 @@ const Music = () => {
                 </div>
               )}
             </div>
+
+            {/* Albums Pagination */}
+            {albumsTotalPages > 1 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  marginTop: '3rem',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {/* Previous Button */}
+                <motion.button
+                  onClick={albumsGoToPreviousPage}
+                  disabled={albumsCurrentPage === 1}
+                  whileHover={{ scale: albumsCurrentPage === 1 ? 1 : 1.05 }}
+                  whileTap={{ scale: albumsCurrentPage === 1 ? 1 : 0.95 }}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '12px',
+                    background: albumsCurrentPage === 1 
+                      ? 'rgba(255, 255, 255, 0.1)' 
+                      : 'linear-gradient(45deg, #667eea, #764ba2)',
+                    border: albumsCurrentPage === 1 
+                      ? '1px solid rgba(255, 255, 255, 0.2)' 
+                      : 'none',
+                    color: albumsCurrentPage === 1 ? 'rgba(255, 255, 255, 0.5)' : 'white',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: albumsCurrentPage === 1 ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <span>←</span>
+                  Previous
+                </motion.button>
+
+                {/* Page Numbers */}
+                {Array.from({ length: albumsTotalPages }, (_, i) => i + 1).map((pageNumber) => {
+                  if (
+                    pageNumber === 1 || 
+                    pageNumber === albumsTotalPages || 
+                    (pageNumber >= albumsCurrentPage - 1 && pageNumber <= albumsCurrentPage + 1) ||
+                    (albumsTotalPages > 5 && (
+                      (albumsCurrentPage <= 3 && pageNumber <= 4) ||
+                      (albumsCurrentPage > albumsTotalPages - 3 && pageNumber >= albumsTotalPages - 3)
+                    ))
+                  ) {
+                    return (
+                      <motion.button
+                        key={pageNumber}
+                        onClick={() => albumsPaginate(pageNumber)}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          background: albumsCurrentPage === pageNumber 
+                            ? 'linear-gradient(45deg, #ff6b6b, #ee5a24)' 
+                            : 'rgba(255, 255, 255, 0.1)',
+                          border: albumsCurrentPage === pageNumber 
+                            ? 'none' 
+                            : '1px solid rgba(255, 255, 255, 0.2)',
+                          color: 'white',
+                          fontSize: '0.9rem',
+                          fontWeight: albumsCurrentPage === pageNumber ? '600' : '400',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                        }}
+                      >
+                        {pageNumber}
+                      </motion.button>
+                    );
+                  } else if (
+                    (pageNumber === 2 && albumsCurrentPage > 4) ||
+                    (pageNumber === albumsTotalPages - 1 && albumsCurrentPage < albumsTotalPages - 3)
+                  ) {
+                    return (
+                      <span key={pageNumber} style={{ 
+                        color: 'rgba(255, 255, 255, 0.5)', 
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold'
+                      }}>
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                })}
+
+                {/* Next Button */}
+                <motion.button
+                  onClick={albumsGoToNextPage}
+                  disabled={albumsCurrentPage === albumsTotalPages}
+                  whileHover={{ scale: albumsCurrentPage === albumsTotalPages ? 1 : 1.05 }}
+                  whileTap={{ scale: albumsCurrentPage === albumsTotalPages ? 1 : 0.95 }}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '12px',
+                    background: albumsCurrentPage === albumsTotalPages 
+                      ? 'rgba(255, 255, 255, 0.1)' 
+                      : 'linear-gradient(45deg, #667eea, #764ba2)',
+                    border: albumsCurrentPage === albumsTotalPages 
+                      ? '1px solid rgba(255, 255, 255, 0.2)' 
+                      : 'none',
+                    color: albumsCurrentPage === albumsTotalPages ? 'rgba(255, 255, 255, 0.5)' : 'white',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: albumsCurrentPage === albumsTotalPages ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  Next
+                  <span>→</span>
+                </motion.button>
+              </motion.div>
+            )}
+
+            {/* Albums Page Info */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              style={{
+                textAlign: 'center',
+                marginTop: '1rem',
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+              }}
+            >
+              Showing {albumsIndexOfFirstItem + 1}-{Math.min(albumsIndexOfLastItem, filteredAlbums.length)} of {filteredAlbums.length} albums
+            </motion.div>
           </div>
         </section>
         )}
@@ -578,8 +756,8 @@ const Music = () => {
               gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
               gap: '2.5rem',
             }}>
-              {filteredSingles.length > 0 ? (
-                filteredSingles.map((single, index) => (
+              {currentSingles.length > 0 ? (
+                currentSingles.map((single, index) => (
                   <motion.div
                     key={single.id}
                     initial={{ opacity: 0, y: 30 }}
@@ -812,6 +990,152 @@ const Music = () => {
                 </div>
               )}
             </div>
+
+            {/* Singles Pagination */}
+            {singlesTotalPages > 1 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  marginTop: '3rem',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {/* Previous Button */}
+                <motion.button
+                  onClick={singlesGoToPreviousPage}
+                  disabled={singlesCurrentPage === 1}
+                  whileHover={{ scale: singlesCurrentPage === 1 ? 1 : 1.05 }}
+                  whileTap={{ scale: singlesCurrentPage === 1 ? 1 : 0.95 }}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '12px',
+                    background: singlesCurrentPage === 1 
+                      ? 'rgba(255, 255, 255, 0.1)' 
+                      : 'linear-gradient(45deg, #667eea, #764ba2)',
+                    border: singlesCurrentPage === 1 
+                      ? '1px solid rgba(255, 255, 255, 0.2)' 
+                      : 'none',
+                    color: singlesCurrentPage === 1 ? 'rgba(255, 255, 255, 0.5)' : 'white',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: singlesCurrentPage === 1 ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <span>←</span>
+                  Previous
+                </motion.button>
+
+                {/* Page Numbers */}
+                {Array.from({ length: singlesTotalPages }, (_, i) => i + 1).map((pageNumber) => {
+                  if (
+                    pageNumber === 1 || 
+                    pageNumber === singlesTotalPages || 
+                    (pageNumber >= singlesCurrentPage - 1 && pageNumber <= singlesCurrentPage + 1) ||
+                    (singlesTotalPages > 5 && (
+                      (singlesCurrentPage <= 3 && pageNumber <= 4) ||
+                      (singlesCurrentPage > singlesTotalPages - 3 && pageNumber >= singlesTotalPages - 3)
+                    ))
+                  ) {
+                    return (
+                      <motion.button
+                        key={pageNumber}
+                        onClick={() => singlesPaginate(pageNumber)}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          background: singlesCurrentPage === pageNumber 
+                            ? 'linear-gradient(45deg, #ff6b6b, #ee5a24)' 
+                            : 'rgba(255, 255, 255, 0.1)',
+                          border: singlesCurrentPage === pageNumber 
+                            ? 'none' 
+                            : '1px solid rgba(255, 255, 255, 0.2)',
+                          color: 'white',
+                          fontSize: '0.9rem',
+                          fontWeight: singlesCurrentPage === pageNumber ? '600' : '400',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                        }}
+                      >
+                        {pageNumber}
+                      </motion.button>
+                    );
+                  } else if (
+                    (pageNumber === 2 && singlesCurrentPage > 4) ||
+                    (pageNumber === singlesTotalPages - 1 && singlesCurrentPage < singlesTotalPages - 3)
+                  ) {
+                    return (
+                      <span key={pageNumber} style={{ 
+                        color: 'rgba(255, 255, 255, 0.5)', 
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold'
+                      }}>
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                })}
+
+                {/* Next Button */}
+                <motion.button
+                  onClick={singlesGoToNextPage}
+                  disabled={singlesCurrentPage === singlesTotalPages}
+                  whileHover={{ scale: singlesCurrentPage === singlesTotalPages ? 1 : 1.05 }}
+                  whileTap={{ scale: singlesCurrentPage === singlesTotalPages ? 1 : 0.95 }}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '12px',
+                    background: singlesCurrentPage === singlesTotalPages 
+                      ? 'rgba(255, 255, 255, 0.1)' 
+                      : 'linear-gradient(45deg, #667eea, #764ba2)',
+                    border: singlesCurrentPage === singlesTotalPages 
+                      ? '1px solid rgba(255, 255, 255, 0.2)' 
+                      : 'none',
+                    color: singlesCurrentPage === singlesTotalPages ? 'rgba(255, 255, 255, 0.5)' : 'white',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: singlesCurrentPage === singlesTotalPages ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  Next
+                  <span>→</span>
+                </motion.button>
+              </motion.div>
+            )}
+
+            {/* Singles Page Info */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              style={{
+                textAlign: 'center',
+                marginTop: '1rem',
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+              }}
+            >
+              Showing {singlesIndexOfFirstItem + 1}-{Math.min(singlesIndexOfLastItem, filteredSingles.length)} of {filteredSingles.length} singles
+            </motion.div>
           </div>
         </section>
         )}
