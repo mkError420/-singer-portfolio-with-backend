@@ -53,6 +53,22 @@ function getAlbums($db) {
             $trackStmt = $db->prepare($trackQuery);
             $trackStmt->execute([$albumId]);
             $album['tracks'] = $trackStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Auto-extract audio for tracks that don't have audio files
+            require_once __DIR__ . '/../services/youtube_audio_extractor.php';
+            $database = new Database();
+            $extractor = new YouTubeAudioExtractor($database);
+            
+            foreach ($album['tracks'] as $track) {
+                if ($track['youtube_url'] && !$track['audio_file']) {
+                    $result = $extractor->extractAudioFromYouTube($track['youtube_url'], $track['id'], $albumId);
+                    
+                    if ($result['success']) {
+                        $track['audio_file'] = $result['audio_file'];
+                    }
+                }
+            }
+            
             echo json_encode($album);
         } else {
             http_response_code(404);

@@ -62,8 +62,8 @@ function createSingle($db) {
         return;
     }
     
-    $query = "INSERT INTO singles (title, duration, artist, cover_image, release_date, audio_file) 
-              VALUES (:title, :duration, :artist, :cover_image, :release_date, :audio_file)";
+    $query = "INSERT INTO singles (title, duration, artist, cover_image, youtube_url, release_date, audio_file) 
+              VALUES (:title, :duration, :artist, :cover_image, :youtube_url, :release_date, :audio_file)";
     
     try {
         $stmt = $db->prepare($query);
@@ -72,6 +72,7 @@ function createSingle($db) {
         $stmt->bindValue(':duration', $data->duration ?? null);
         $stmt->bindValue(':artist', $data->artist ?? '');
         $stmt->bindValue(':cover_image', $data->cover_image ?? null);
+        $stmt->bindValue(':youtube_url', $data->youtube_url ?? null);
         $stmt->bindValue(':release_date', $data->release_date ?? null);
         $stmt->bindValue(':audio_file', $data->audio_file ?? null);
         
@@ -102,6 +103,7 @@ function updateSingle($db) {
               duration = :duration, 
               artist = :artist, 
               cover_image = :cover_image, 
+              youtube_url = :youtube_url,
               release_date = :release_date, 
               audio_file = :audio_file 
               WHERE id = :id";
@@ -113,6 +115,7 @@ function updateSingle($db) {
         $stmt->bindValue(':duration', $data->duration ?? null);
         $stmt->bindValue(':artist', $data->artist ?? '');
         $stmt->bindValue(':cover_image', $data->cover_image ?? null);
+        $stmt->bindValue(':youtube_url', $data->youtube_url ?? null);
         $stmt->bindValue(':release_date', $data->release_date ?? null);
         $stmt->bindValue(':audio_file', $data->audio_file ?? null);
         $stmt->bindValue(':id', $data->id);

@@ -15,6 +15,10 @@ const Music = () => {
   const [singles, setSingles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState('');
+  const [currentAudioUrl, setCurrentAudioUrl] = useState('');
+  const [isExtractingAudio, setIsExtractingAudio] = useState(false);
   const audioRef = useRef(null);
 
   // Load data from API
@@ -36,10 +40,27 @@ const Music = () => {
         const albumsWithTracks = await Promise.all(
           albumsData.map(async (album) => {
             try {
-              console.log('📸 Album cover image path:', album.cover_image);
-              
+              console.log('🔄 Loading tracks for album:', album.title);
               const response = await fetch(`http://localhost/madam-portfolio/backend/api/albums_fixed.php?album_id=${album.id}&include_tracks=1`);
               const albumWithTracks = await response.json();
+              console.log('📊 Album with tracks:', albumWithTracks);
+              
+              // Log audio file info for each track
+              if (albumWithTracks.tracks) {
+                albumWithTracks.tracks.forEach((track, index) => {
+                  console.log(`🎵 Track ${index + 1}:`, track.title);
+                  console.log('🎵 Audio file:', track.audio_file);
+                  console.log('📺 YouTube URL:', track.youtube_url);
+                });
+                
+                // Auto-play the first track with audio
+                const firstTrackWithAudio = albumWithTracks.tracks.find(track => track.audio_file);
+                if (firstTrackWithAudio && !currentTrack) {
+                  console.log('🎵 Auto-playing first track with audio:', firstTrackWithAudio.title);
+                  setCurrentTrack(firstTrackWithAudio);
+                  setIsPlaying(true);
+                }
+              }
               
               // Fix the cover image URL
               if (albumWithTracks.cover_image) {
@@ -96,20 +117,183 @@ const Music = () => {
     };
   }, [currentTrack]);
 
-  const handleTrackClick = (track) => {
+  const handleTrackClick = async (track) => {
     setCurrentTrack(track);
-    setIsPlaying(true);
     
-    // If track has YouTube URL, you could optionally open it or play preview
-    if (track.youtube_url) {
-      console.log('Track has YouTube URL:', track.youtube_url);
+    // First test CORS with a simple endpoint
+    console.log('🔍 Testing CORS...');
+    try {
+      const corsTest = await fetch('http://localhost/madam-portfolio/backend/test_cors_fix.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ test: 'cors' })
+      });
+      
+      console.log('🔍 CORS Test Response:', corsTest.status, corsTest.ok);
+      const corsResult = await corsTest.json();
+      console.log('🔍 CORS Test Result:', corsResult);
+      
+      if (!corsTest.ok) {
+        console.error('❌ CORS test failed');
+        alert('CORS test failed. Backend may not be configured correctly.');
+        setIsExtractingAudio(false);
+        return;
+      }
+    } catch (error) {
+      console.error('❌ CORS test error:', error);
+      alert('CORS test failed: ' + error.message);
+      setIsExtractingAudio(false);
+      return;
+    }
+    
+    // If CORS test passes, proceed with audio extraction
+    console.log('✅ CORS test passed, proceeding with audio extraction...');
+    
+    // If track has YouTube URL but no audio file, extract audio first
+    if (track.youtube_url && !track.audio_file) {
+      console.log('🎬 Extracting audio from YouTube video...');
+      setIsExtractingAudio(true);
+      
+      try {
+        // Call the audio extraction API
+        const response = await fetch('http://localhost/madam-portfolio/backend/services/youtube_audio_extractor.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'extract_single',
+            youtube_url: track.youtube_url,
+            track_id: track.id,
+            album_id: track.album_id
+          })
+        });
+        
+        console.log('📡 API Response status:', response.status);
+        console.log('📡 API Response ok:', response.ok);
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log('✅ Audio extracted successfully:', result.audio_file);
+          
+          // Update the track with the new audio file
+          track.audio_file = result.audio_file;
+          console.log('🔄 Updated track with audio_file:', track.audio_file);
+          setCurrentTrack(track);
+          console.log('🔄 Set currentTrack:', currentTrack);
+          
+          // Now play the audio
+          setIsPlaying(true);
+          
+          // Show success message
+          alert('Audio extracted successfully! Playing track...');
+        } else {
+          console.error('❌ Audio extraction failed:', result.message);
+          alert('Failed to extract audio: ' + result.message);
+        }
+      } catch (error) {
+        console.error('❌ Error extracting audio:', error);
+        console.error('❌ Full error details:', error.message);
+        console.error('❌ Error stack:', error.stack);
+        console.error('❌ Error type:', error.name);
+        
+        // Show more detailed error to user
+        if (error.message.includes('fetch')) {
+          console.error('❌ Network error - checking API URL...');
+          console.error('❌ API URL: http://localhost/madam-portfolio/backend/services/youtube_audio_extractor.php');
+          alert('Network error: Could not connect to audio extraction service. Please check if the backend is running.');
+        } else if (error.message.includes('JSON')) {
+          alert('Server error: Invalid response from extraction service');
+        } else {
+          alert('Error extracting audio: ' + error.message);
+        }
+      } finally {
+        setIsExtractingAudio(false);
+      }
+    } else if (track.audio_file) {
+      // Track already has audio file, just play it
+      console.log('🎵 Playing existing audio file');
+      setIsPlaying(true);
+    } else {
+      console.log('No audio file or YouTube URL available for this track');
+    }
+  };
+
+  const openVideoModal = (youtubeUrl, audioUrl = null) => {
+    console.log('🎬 Opening video modal');
+    console.log('📹 YouTube URL:', youtubeUrl);
+    console.log('🎵 Audio URL:', audioUrl);
+    
+    // Convert YouTube URL to embed format
+    let embedUrl = youtubeUrl;
+    
+    // Ensure URL starts with https
+    if (youtubeUrl.startsWith('http://')) {
+      embedUrl = youtubeUrl.replace('http://', 'https://');
+    } else if (!youtubeUrl.startsWith('https://')) {
+      embedUrl = 'https://' + youtubeUrl;
+    }
+    
+    if (embedUrl.includes('watch?v=')) {
+      const videoId = embedUrl.split('watch?v=')[1].split('&')[0];
+      embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+    } else if (embedUrl.includes('youtu.be/')) {
+      const videoId = embedUrl.split('youtu.be/')[1].split('?')[0];
+      embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+    } else if (embedUrl.includes('youtube.com/embed/')) {
+      embedUrl = embedUrl + '?autoplay=1&rel=0';
+    }
+    
+    console.log('📹 Embed URL:', embedUrl);
+    
+    // Set both video and audio URLs
+    setCurrentVideoUrl(embedUrl);
+    setCurrentAudioUrl(audioUrl);
+    setShowVideoModal(true);
+    
+    console.log('🎬 Modal opened with video and audio');
+  };
+
+  const openYouTubeInNewTab = (youtubeUrl) => {
+    // Ensure URL is properly formatted
+    let finalUrl = youtubeUrl;
+    if (!youtubeUrl.startsWith('http')) {
+      finalUrl = 'https://' + youtubeUrl;
+    }
+    console.log('Opening YouTube in new tab:', finalUrl);
+    window.open(finalUrl, '_blank');
+  };
+
+  const closeVideoModal = () => {
+    setShowVideoModal(false);
+    setCurrentVideoUrl('');
+    setCurrentAudioUrl('');
+    
+    // Stop audio if playing
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
   };
 
   const togglePlayPause = () => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
-
+    
+    // Check if current track has audio file
+    if (!currentTrack.audio_file) {
+      console.log('❌ No audio file available for this track');
+      console.log('❌ currentTrack.audio_file:', currentTrack.audio_file);
+      return;
+    }
+    
+    console.log('🎵 Toggling play/pause for track:', currentTrack.title);
+    console.log('🎵 Audio file:', currentTrack.audio_file);
+    console.log('🎵 Audio src:', audio.src);
+    
     if (isPlaying) {
       audio.pause();
     } else {
@@ -120,7 +304,7 @@ const Music = () => {
 
   const handleSeek = (e) => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !currentTrack || !currentTrack.audio_file) return;
     const newTime = (e.target.value / 100) * duration;
     audio.currentTime = newTime;
     setCurrentTime(newTime);
@@ -202,8 +386,13 @@ const Music = () => {
       {/* Hidden Audio Element */}
       <audio
         ref={audioRef}
-        src={currentTrack ? `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3` : ''}
+        src={currentTrack && currentTrack.audio_file ? `http://localhost/madam-portfolio/backend/uploads/${currentTrack.audio_file}` : ''}
         onEnded={() => setIsPlaying(false)}
+        onError={(e) => {
+          console.error('❌ Audio element error:', e);
+          console.error('❌ Audio src:', e.target.src);
+          console.error('❌ Current track audio_file:', currentTrack?.audio_file);
+        }}
       />
 
       {/* Hero Section */}
@@ -367,20 +556,46 @@ const Music = () => {
               {/* Track Info */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <img
-                  src="https://via.placeholder.com/50x50/2a2a2a/ffffff?text=Track"
+                  src={currentTrack?.cover_image || ""}
                   alt="Track"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
                   style={{
                     width: '50px',
                     height: '50px',
                     borderRadius: '8px',
+                    backgroundColor: currentTrack?.cover_image ? 'transparent' : '#2a2a2a',
+                    display: currentTrack?.cover_image ? 'block' : 'none'
                   }}
                 />
+                {!currentTrack?.cover_image && (
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '8px',
+                    backgroundColor: '#2a2a2a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    🎵
+                  </div>
+                )}
                 <div>
                   <h4 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '1rem' }}>
                     {currentTrack.title}
                   </h4>
                   <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.9rem' }}>
                     {currentTrack.artist}
+                    {currentTrack.youtube_url && (
+                      <span style={{ color: '#ff0000', marginLeft: '0.5rem', fontSize: '0.8rem' }}>
+                        • 📺 Video Available
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -595,19 +810,19 @@ const Music = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                window.open(track.youtube_url, '_blank');
+                                openVideoModal(track.youtube_url, track.audio_file);
                               }}
                               style={{
                                 background: 'none',
                                 border: 'none',
-                                color: 'var(--text-secondary)',
+                                color: '#ff0000',
                                 fontSize: '0.9rem',
                                 cursor: 'pointer',
                                 padding: '0.25rem',
                               }}
-                              title="Open in YouTube"
+                              title="Watch on YouTube"
                             >
-                              🎵
+                              📺
                             </button>
                           )}
                           <button
@@ -615,15 +830,17 @@ const Music = () => {
                               e.stopPropagation();
                               handleTrackClick(track);
                             }}
+                            disabled={isExtractingAudio}
                             style={{
                               background: 'none',
                               border: 'none',
-                              color: currentTrack?.id === track.id && isPlaying ? 'var(--accent-color)' : 'var(--text-secondary)',
+                              color: currentTrack?.id === track.id ? 'var(--accent-color)' : 'var(--text-secondary)',
                               fontSize: '1rem',
-                              cursor: 'pointer',
+                              cursor: isExtractingAudio ? 'not-allowed' : 'pointer',
+                              opacity: isExtractingAudio ? 0.5 : 1,
                             }}
                           >
-                            {currentTrack?.id === track.id && isPlaying ? '⏸' : '▶'}
+                            {isExtractingAudio && currentTrack?.id === track.id ? '⏳' : (currentTrack?.id === track.id ? '👁 Selected' : '▶')}
                           </button>
                         </div>
                       </div>
@@ -727,11 +944,11 @@ const Music = () => {
                   {single.release_date} • {single.duration}
                 </p>
                 <button
-                  onClick={() => handleTrackClick(single)}
+                  onClick={() => single.youtube_url ? openVideoModal(single.youtube_url, single.audio_file) : handleTrackClick(single)}
                   className="btn btn-secondary btn-sm"
                   style={{ width: '100%' }}
                 >
-                  {currentTrack?.id === single.id && isPlaying ? '⏸ Playing' : '▶ Play'}
+                  {single.youtube_url ? '📺 Watch Video' : (currentTrack?.id === single.id && isPlaying ? '⏸ Playing' : '▶ Play')}
                 </button>
               </motion.div>
             ))
@@ -764,6 +981,131 @@ const Music = () => {
           </div>
         </div>
       </section>
+
+      {/* YouTube Video Modal */}
+      {showVideoModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            position: 'relative',
+            width: '90%',
+            maxWidth: '800px',
+            backgroundColor: '#000',
+            borderRadius: '10px',
+            overflow: 'hidden',
+          }}>
+            {/* Close Button */}
+            <button
+              onClick={closeVideoModal}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                color: 'white',
+                fontSize: '20px',
+                cursor: 'pointer',
+                zIndex: 1001,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              ×
+            </button>
+            
+            {/* Fallback Button */}
+            <button
+              onClick={() => {
+                const originalUrl = currentVideoUrl.replace('/embed/', '/watch?v=').split('?')[0];
+                openYouTubeInNewTab(originalUrl);
+              }}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                left: '10px',
+                background: 'rgba(255, 0, 0, 0.8)',
+                border: 'none',
+                borderRadius: '5px',
+                padding: '8px 12px',
+                color: 'white',
+                fontSize: '12px',
+                cursor: 'pointer',
+                zIndex: 1001,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+              }}
+              title="Open in YouTube (if video doesn't play)"
+            >
+              📺 YouTube
+            </button>
+            
+            {/* YouTube Video */}
+            <div style={{
+              position: 'relative',
+              paddingBottom: '56.25%', // 16:9 aspect ratio
+              height: 0,
+            }}>
+              <iframe
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                }}
+                src={currentVideoUrl}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+            
+            {/* Audio Player */}
+            {currentAudioUrl && (
+              <div style={{
+                marginTop: '1rem',
+                padding: '1rem',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+              }}>
+                <h4 style={{ color: 'white', margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>
+                  🎵 Audio Track
+                </h4>
+                <audio
+                  ref={audioRef}
+                  src={currentAudioUrl ? `http://localhost/madam-portfolio/backend/uploads/${currentAudioUrl}` : ''}
+                  controls
+                  style={{
+                    width: '100%',
+                    borderRadius: '4px',
+                  }}
+                  onEnded={() => {
+                    console.log('Audio ended');
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       </div>
     </>
   );

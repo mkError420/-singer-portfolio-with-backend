@@ -252,12 +252,28 @@ $currentUser = $auth->getCurrentUser();
             background: #d5dbdb;
         }
         
-        .preview-image {
-            max-width: 200px;
-            max-height: 200px;
-            margin-top: 1rem;
+        .youtube-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #ff0000;
+            text-decoration: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .youtube-link:hover {
+            background-color: #f8f8f8;
+            text-decoration: none;
+            color: #cc0000;
+        }
+        
+        .single-cover {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
             border-radius: 5px;
-            border: 1px solid #ddd;
         }
     </style>
 </head>
@@ -296,6 +312,7 @@ $currentUser = $auth->getCurrentUser();
                             <th>Artist</th>
                             <th>Duration</th>
                             <th>Release Date</th>
+                            <th>YouTube URL</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -335,6 +352,12 @@ $currentUser = $auth->getCurrentUser();
                 <div class="form-group">
                     <label for="release_date">Release Date</label>
                     <input type="text" id="release_date" name="release_date" placeholder="2024" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="youtube_url">YouTube URL</label>
+                    <input type="url" id="youtube_url" name="youtube_url" placeholder="https://www.youtube.com/watch?v=...">
+                    <small>Optional: Add YouTube link for this single</small>
                 </div>
                 
                 <div class="form-group">
@@ -388,6 +411,17 @@ $currentUser = $auth->getCurrentUser();
                     <td>${single.duration}</td>
                     <td>${single.release_date}</td>
                     <td>
+                        ${single.youtube_url ? 
+                            `<a href="${single.youtube_url}" target="_blank" class="youtube-link" title="Open YouTube">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="red">
+                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                </svg>
+                                YouTube
+                            </a>` : 
+                            '<span style="color: #999;">No URL</span>'
+                        }
+                    </td>
+                    <td>
                         <div class="table-actions">
                             <button class="btn btn-edit btn-sm" onclick="editSingle(${single.id})">Edit</button>
                             <button class="btn btn-delete btn-sm" onclick="deleteSingle(${single.id})">Delete</button>
@@ -423,6 +457,7 @@ $currentUser = $auth->getCurrentUser();
                 document.getElementById('artist').value = single.artist;
                 document.getElementById('duration').value = single.duration;
                 document.getElementById('release_date').value = single.release_date;
+                document.getElementById('youtube_url').value = single.youtube_url || '';
                 
                 if (single.cover_image) {
                     document.getElementById('imagePreview').src = '../' + single.cover_image;
@@ -480,8 +515,11 @@ $currentUser = $auth->getCurrentUser();
                 artist: document.getElementById('artist').value,
                 duration: document.getElementById('duration').value,
                 release_date: document.getElementById('release_date').value,
+                youtube_url: document.getElementById('youtube_url').value,
                 cover_image: document.getElementById('coverImagePath').value
             };
+            
+            console.log('Single data to save:', singleData);
             
             // Handle image upload
             const imageFile = document.getElementById('coverImage').files[0];
@@ -513,6 +551,9 @@ $currentUser = $auth->getCurrentUser();
                     singleData.id = editingSingle.id;
                 }
                 
+                console.log('Sending request:', method, url);
+                console.log('Request body:', JSON.stringify(singleData));
+                
                 const response = await fetch(url, {
                     method: method,
                     headers: {
@@ -521,11 +562,18 @@ $currentUser = $auth->getCurrentUser();
                     body: JSON.stringify(singleData)
                 });
                 
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                
                 if (response.ok) {
+                    const result = await response.json();
+                    console.log('Save result:', result);
                     closeModal();
                     loadSingles();
                 } else {
-                    alert('Error saving single');
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    alert('Error saving single: ' + errorText);
                 }
             } catch (error) {
                 console.error('Error saving single:', error);
