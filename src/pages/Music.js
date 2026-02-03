@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { demoImages } from '../config/demoImages';
+import { musicAPI } from '../services/api';
 import ButtonStyles from '../styles/ButtonStyles';
 
 const Music = () => {
@@ -11,81 +11,32 @@ const Music = () => {
   const [volume, setVolume] = useState(0.7);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [albums, setAlbums] = useState([]);
+  const [singles, setSingles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const audioRef = useRef(null);
 
-  // Static demo albums (original data)
-  const albums = [
-    {
-      id: 1,
-      title: "Echoes of Emotion",
-      year: "2024",
-      category: "album",
-      cover: demoImages.albums[1],
-      tracks: [
-        { id: 1, title: "Whispers of the Soul", duration: "3:45", artist: "Artist Name", category: "album" },
-        { id: 2, title: "Midnight Melodies", duration: "4:12", artist: "Artist Name", category: "album" },
-        { id: 3, title: "Dancing in the Rain", duration: "3:28", artist: "Artist Name", category: "album" },
-        { id: 4, title: "Heart's Symphony", duration: "5:01", artist: "Artist Name", category: "album" },
-        { id: 5, title: "Eternal Echoes", duration: "4:33", artist: "Artist Name", category: "album" },
-      ]
-    },
-    {
-      id: 2,
-      title: "Soulful Journey",
-      year: "2022",
-      category: "album",
-      cover: demoImages.albums[2],
-      tracks: [
-        { id: 6, title: "Journey Begins", duration: "3:15", artist: "Artist Name", category: "album" },
-        { id: 7, title: "Soul's Awakening", duration: "4:45", artist: "Artist Name", category: "album" },
-        { id: 8, title: "Rhythms of Life", duration: "3:52", artist: "Artist Name", category: "album" },
-        { id: 9, title: "Emotional Tides", duration: "4:18", artist: "Artist Name", category: "album" },
-      ]
-    },
-    {
-      id: 3,
-      title: "Acoustic Sessions",
-      year: "2020",
-      category: "acoustic",
-      cover: demoImages.albums[3],
-      tracks: [
-        { id: 10, title: "Unplugged Dreams", duration: "3:08", artist: "Artist Name", category: "acoustic" },
-        { id: 11, title: "Raw Emotions", duration: "4:25", artist: "Artist Name", category: "acoustic" },
-        { id: 12, title: "Intimate Moments", duration: "3:42", artist: "Artist Name", category: "acoustic" },
-      ]
-    }
-  ];
+  // Load data from API
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const albumsData = await musicAPI.getAlbums();
+        const singlesData = await musicAPI.getSingles();
+        setAlbums(albumsData);
+        setSingles(singlesData);
+        setError(null);
+      } catch (err) {
+        console.error('Error loading music data:', err);
+        setError('Failed to load music data');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Static demo singles
-  const singles = [
-    {
-      id: 13,
-      title: "New Beginning",
-      duration: "3:55",
-      artist: "Artist Name",
-      category: "single",
-      cover: demoImages.singles[1],
-      releaseDate: "2024"
-    },
-    {
-      id: 14,
-      title: "Summer Vibes",
-      duration: "3:22",
-      artist: "Artist Name",
-      category: "single",
-      cover: demoImages.singles[2],
-      releaseDate: "2024"
-    },
-    {
-      id: 15,
-      title: "Winter's Tale",
-      duration: "4:08",
-      artist: "Artist Name",
-      category: "single",
-      cover: demoImages.singles[3],
-      releaseDate: "2023"
-    }
-  ];
+    loadData();
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -160,9 +111,9 @@ const Music = () => {
   const filteredAlbums = albums.filter(album => {
     const matchesSearch = album.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          album.year.includes(searchTerm) ||
-                         album.tracks.some(track => 
+                         (album.tracks && album.tracks.some(track => 
                            track.title.toLowerCase().includes(searchTerm.toLowerCase())
-                         );
+                         ));
     const matchesCategory = selectedCategory === 'all' || album.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -171,10 +122,29 @@ const Music = () => {
   const filteredSingles = singles.filter(single => {
     const matchesSearch = single.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          single.artist.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         single.releaseDate.includes(searchTerm);
+                         single.release_date.includes(searchTerm);
     const matchesCategory = selectedCategory === 'all' || single.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="music" style={{ textAlign: 'center', padding: '4rem' }}>
+        <h2>Loading music...</h2>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="music" style={{ textAlign: 'center', padding: '4rem' }}>
+        <h2>Error loading music</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -509,7 +479,7 @@ const Music = () => {
               >
                 <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
                   <img
-                    src={album.cover}
+                    src={album.cover_image ? `/${album.cover_image}` : `https://via.placeholder.com/120x120/2a2a2a/ffffff?text=${encodeURIComponent(album.title)}`}
                     alt={album.title}
                     onError={(e) => {
                       e.target.src = `https://via.placeholder.com/120x120/2a2a2a/ffffff?text=${encodeURIComponent(album.title)}`;
@@ -526,7 +496,7 @@ const Music = () => {
                       {album.title}
                     </h3>
                     <p style={{ color: 'var(--text-secondary)', margin: '0 0 0.5rem' }}>
-                      {album.year} • {album.tracks.length} tracks
+                      {album.year} • {album.tracks ? album.tracks.length : 0} tracks
                     </p>
                     <button className="btn btn-gradient-text btn-sm">
                       Play Album
@@ -535,7 +505,7 @@ const Music = () => {
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                  {album.tracks.map((track, trackIndex) => (
+                  {album.tracks && album.tracks.map((track, trackIndex) => (
                     <div
                       key={track.id}
                       style={{
@@ -665,7 +635,7 @@ const Music = () => {
                 style={{ textAlign: 'center' }}
               >
                 <img
-                  src={single.cover}
+                  src={single.cover_image ? `/${single.cover_image}` : `https://via.placeholder.com/250x250/2a2a2a/ffffff?text=${encodeURIComponent(single.title)}`}
                   alt={single.title}
                   onError={(e) => {
                     e.target.src = `https://via.placeholder.com/250x250/2a2a2a/ffffff?text=${encodeURIComponent(single.title)}`;
@@ -680,7 +650,7 @@ const Music = () => {
                   {single.title}
                 </h3>
                 <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0', fontSize: '0.9rem' }}>
-                  {single.releaseDate} • {single.duration}
+                  {single.release_date} • {single.duration}
                 </p>
                 <button
                   onClick={() => playTrack(single)}

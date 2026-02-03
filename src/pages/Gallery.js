@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { galleryAPI } from '../services/api';
-import { demoImages } from '../config/demoImages';
 
 const Gallery = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -16,13 +15,11 @@ const Gallery = () => {
   const fetchGalleryImages = async () => {
     try {
       setLoading(true);
-      // Try to fetch from API first
       const data = await galleryAPI.getAllImages();
       setGalleryImages(data);
     } catch (error) {
       console.error('Error fetching gallery images:', error);
-      // Use demo images as fallback
-      setGalleryImages(demoImages.gallery);
+      setGalleryImages([]);
     } finally {
       setLoading(false);
     }
@@ -181,10 +178,9 @@ const Gallery = () => {
                   >
                     <div style={{ position: 'relative', overflow: 'hidden' }}>
                       <img
-                        src={image.thumbnail || image.src}
+                        src={image.image ? `/${image.image}` : `https://via.placeholder.com/400x300/2a2a2a/ffffff?text=${encodeURIComponent(image.title)}`}
                         alt={image.title}
                         onError={(e) => {
-                          // Fallback to a reliable image if the main one fails
                           e.target.src = `https://via.placeholder.com/400x300/2a2a2a/ffffff?text=${encodeURIComponent(image.title)}`;
                         }}
                         style={{
@@ -278,7 +274,7 @@ const Gallery = () => {
                 justifyContent: 'center',
               }}>
                 <img
-                  src={selectedImage.src || selectedImage.thumbnail}
+                  src={selectedImage.image ? `/${selectedImage.image}` : `https://via.placeholder.com/800x600/2a2a2a/ffffff?text=${encodeURIComponent(selectedImage.title)}`}
                   alt={selectedImage.title}
                   onError={(e) => {
                     e.target.src = `https://via.placeholder.com/800x600/2a2a2a/ffffff?text=${encodeURIComponent(selectedImage.title)}`;

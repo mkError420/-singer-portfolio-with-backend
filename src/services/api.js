@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: 'http://localhost/madam-portfolio/backend/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -33,7 +33,15 @@ api.interceptors.response.use(
 
 // API service functions
 export const musicAPI = {
-  getAllMusic: () => api.get('/music'),
+  getAlbums: () => api.get('/albums'),
+  getSingles: () => api.get('/singles'),
+  getAllMusic: async () => {
+    const [albums, singles] = await Promise.all([
+      api.get('/albums'),
+      api.get('/singles')
+    ]);
+    return { albums, singles };
+  },
 };
 
 export const videosAPI = {
@@ -53,6 +61,18 @@ export const tourAPI = {
 
 export const contactAPI = {
   submitForm: (formData) => api.post('/contact', formData),
+};
+
+export const uploadAPI = {
+  uploadFile: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 export default api;

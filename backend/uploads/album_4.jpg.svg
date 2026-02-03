@@ -1,0 +1,5 @@
+<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+                <rect width="300" height="300" fill="#f3b0bd"/>
+                <text x="150" y="140" text-anchor="middle" fill="white" font-size="20" font-family="Arial">Album 4</text>
+                <text x="150" y="170" text-anchor="middle" fill="white" font-size="16" font-family="Arial">Echoes of Emotion</text>
+            </svg>
