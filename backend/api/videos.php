@@ -10,10 +10,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
-require_once '../config/config.php';
-
+// Direct database connection
 try {
-    $db = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+    $db = new PDO("mysql:host=localhost;dbname=madam_portfolio", "root", "");
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch(PDOException $e) {
     http_response_code(500);
@@ -120,17 +119,32 @@ function extractYouTubeId($url) {
 function createVideo() {
     global $db;
     
-    $data = json_decode(file_get_contents("php://input"));
+    $input = file_get_contents("php://input");
+    if ($input === false) {
+        http_response_code(400);
+        echo json_encode(['message' => 'No input data received']);
+        return;
+    }
+    
+    $data = json_decode($input);
+    if ($data === null) {
+        http_response_code(400);
+        echo json_encode(['message' => 'Invalid JSON data received']);
+        return;
+    }
     
     try {
-        $query = "INSERT INTO videos (title, description, video_url) 
-                  VALUES (:title, :description, :video_url)";
+        $query = "INSERT INTO videos (title, description, video_url, thumbnail, category, duration) 
+                  VALUES (:title, :description, :video_url, :thumbnail, :category, :duration)";
         
         $stmt = $db->prepare($query);
         
-        $stmt->bindParam(':title', $data->title);
-        $stmt->bindParam(':description', $data->description);
-        $stmt->bindParam(':video_url', $data->video_url);
+        $stmt->bindValue(':title', $data->title);
+        $stmt->bindValue(':description', $data->description);
+        $stmt->bindValue(':video_url', $data->video_url);
+        $stmt->bindValue(':thumbnail', $data->thumbnail ?? null);
+        $stmt->bindValue(':category', $data->category);
+        $stmt->bindValue(':duration', $data->duration ?? null);
         
         if ($stmt->execute()) {
             http_response_code(201);
@@ -157,7 +171,10 @@ function updateVideo() {
         $query = "UPDATE videos SET 
                   title = :title, 
                   description = :description, 
-                  video_url = :video_url 
+                  video_url = :video_url, 
+                  thumbnail = :thumbnail, 
+                  category = :category, 
+                  duration = :duration 
                   WHERE id = :id";
         
         $stmt = $db->prepare($query);
@@ -165,6 +182,9 @@ function updateVideo() {
         $stmt->bindParam(':title', $data->title);
         $stmt->bindParam(':description', $data->description);
         $stmt->bindParam(':video_url', $data->video_url);
+        $stmt->bindParam(':thumbnail', $data->thumbnail ?? null);
+        $stmt->bindParam(':category', $data->category);
+        $stmt->bindParam(':duration', $data->duration ?? null);
         $stmt->bindParam(':id', $data->id);
         
         if ($stmt->execute()) {

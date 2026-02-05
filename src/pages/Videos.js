@@ -37,117 +37,56 @@ const Videos = () => {
   // Demo videos fallback
   const getDemoVideos = () => {
     return [
-    {
-      id: 1,
-      title: "Echoes of Emotion",
-      description: "Official music video for the title track from the latest album",
-      thumbnail: demoImages.videos.music1,
-      videoId: "dQw4w9WgXcQ", // YouTube video ID
-      duration: "4:32",
-      views: "1.2M",
-      releaseDate: "2024",
-      category: "music"
-    },
-    {
-      id: 2,
-      title: "Midnight Melodies",
-      description: "A visual journey through the night with soulful melodies",
-      thumbnail: demoImages.videos.music2,
-      videoId: "dQw4w9WgXcQ",
-      duration: "3:45",
-      views: "856K",
-      releaseDate: "2024",
-      category: "music"
-    },
-    {
-      id: 3,
-      title: "Dancing in the Rain",
-      description: "Upbeat track celebrating joy and freedom",
-      thumbnail: demoImages.videos.music3,
-      videoId: "dQw4w9WgXcQ",
-      duration: "3:28",
-      views: "2.1M",
-      releaseDate: "2024",
-      category: "music"
-    }
-  ];
-
-  // Static demo live performances
-  const livePerformances = [
-    {
-      id: 4,
-      title: "Live at Madison Square Garden",
-      description: "Full concert performance from the world tour",
-      thumbnail: demoImages.videos.live1,
-      videoId: "dQw4w9WgXcQ",
-      duration: "15:20",
-      views: "3.5M",
-      releaseDate: "2024",
-      category: "live"
-    },
-    {
-      id: 5,
-      title: "Acoustic Session at Abbey Road",
-      description: "Intimate acoustic performance at the legendary studio",
-      thumbnail: demoImages.videos.live2,
-      videoId: "dQw4w9WgXcQ",
-      duration: "22:15",
-      views: "1.8M",
-      releaseDate: "2023",
-      category: "acoustic"
-    },
-    {
-      id: 6,
-      title: "Festival Headliner Performance",
-      description: "Electric performance at Summer Music Festival",
-      thumbnail: demoImages.videos.live3,
-      videoId: "dQw4w9WgXcQ",
-      duration: "45:00",
-      views: "5.2M",
-      releaseDate: "2023",
-      category: "live"
-    }
-  ];
-
-  // Static demo behind the scenes
-  const behindTheScenes = [
-    {
-      id: 7,
-      title: "Making of Echoes of Emotion",
-      description: "Behind the scenes footage from the album recording sessions",
-      thumbnail: demoImages.videos.behind1,
-      videoId: "dQw4w9WgXcQ",
-      duration: "12:30",
-      views: "445K",
-      releaseDate: "2024",
-      category: "behind"
-    },
-    {
-      id: 8,
-      title: "Music Video Shoot",
-      description: "The making of 'Whispers of the Soul' video",
-      thumbnail: demoImages.videos.behind2,
-      videoId: "dQw4w9WgXcQ",
-      duration: "8:30",
-      views: "189K",
-      releaseDate: "2024",
-      category: "behind"
-    },
-    {
-      id: 9,
-      title: "Tour Diary",
-      description: "Life on the road during the world tour",
-      thumbnail: demoImages.videos.behind3,
-      videoId: "dQw4w9WgXcQ",
-      duration: "15:20",
-      views: "445K",
-      releaseDate: "2023",
-      category: "behind"
-    }
-  ];
+      {
+        id: 1,
+        title: "Echoes of Emotion",
+        description: "Official music video for the title track from the latest album",
+        thumbnail: demoImages.videos.music1,
+        videoId: "dQw4w9WgXcQ", // YouTube video ID
+        duration: "4:32",
+        views: "1.2M",
+        releaseDate: "2024",
+        category: "music"
+      },
+      {
+        id: 2,
+        title: "Midnight Melodies",
+        description: "A visual journey through the night with soulful melodies",
+        thumbnail: demoImages.videos.music2,
+        videoId: "dQw4w9WgXcQ",
+        duration: "3:45",
+        views: "856K",
+        releaseDate: "2024",
+        category: "music"
+      },
+      {
+        id: 3,
+        title: "Dancing in the Rain",
+        description: "Upbeat track celebrating joy and freedom",
+        thumbnail: demoImages.videos.music3,
+        videoId: "dQw4w9WgXcQ",
+        duration: "3:28",
+        views: "2.1M",
+        releaseDate: "2024",
+        category: "music"
+      }
+    ];
+  };
 
   // Filter videos based on search and category
   const filteredVideos = videos.filter(video => {
+    const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       video.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || video.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Music videos from the main videos array
+  const musicVideos = videos.filter(video => video.category === 'music');
+  const livePerformances = videos.filter(video => video.category === 'live');
+  const behindTheScenes = videos.filter(video => video.category === 'behind');
+
+  const filteredMusicVideos = musicVideos.filter(video => {
     const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        video.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || video.category === selectedCategory;
@@ -162,16 +101,6 @@ const Videos = () => {
   });
 
   const filteredBehindTheScenes = behindTheScenes.filter(video => {
-    const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       video.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || video.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  // Music videos from the main videos array
-  const musicVideos = videos.filter(video => video.category === 'music');
-
-  const filteredMusicVideos = musicVideos.filter(video => {
     const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        video.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || video.category === selectedCategory;
@@ -396,7 +325,7 @@ const Videos = () => {
                   >
                     <div style={{ position: 'relative', paddingBottom: '56.25%', overflow: 'hidden', borderRadius: '12px' }}>
                       <img
-                        src={video.thumbnail}
+                        src={video.thumbnail || 'https://via.placeholder.com/300x200/333/fff?text=' + encodeURIComponent(video.title)}
                         alt={video.title}
                         style={{
                           position: 'absolute',
@@ -504,7 +433,7 @@ const Videos = () => {
               >
                 <div style={{ position: 'relative', marginBottom: '1rem' }}>
                   <img
-                    src={video.thumbnail}
+                    src={video.thumbnail || 'https://via.placeholder.com/300x200/333/fff?text=' + encodeURIComponent(video.title)}
                     alt={video.title}
                     style={{
                       width: '100%',
@@ -625,7 +554,7 @@ const Videos = () => {
               >
                 <div style={{ position: 'relative', marginBottom: '1rem' }}>
                   <img
-                    src={video.thumbnail}
+                    src={video.thumbnail || 'https://via.placeholder.com/300x200/333/fff?text=' + encodeURIComponent(video.title)}
                     alt={video.title}
                     style={{
                       width: '100%',
@@ -778,7 +707,6 @@ const Videos = () => {
       )}
     </div>
   );
-}
 };
 
 export default Videos;

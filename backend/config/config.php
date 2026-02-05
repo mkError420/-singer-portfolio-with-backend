@@ -23,11 +23,6 @@ define('SESSION_LIFETIME', 86400); // 24 hours
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// CORS Headers
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);

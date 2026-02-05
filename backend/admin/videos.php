@@ -353,39 +353,21 @@ $currentUser = $auth->getCurrentUser();
         let videos = [];
         let editingVideo = null;
         
-        // Load videos from dashboard
+        // Load videos from database
         async function loadVideos() {
             try {
-                // For now, use sample data since dashboard integration is not implemented
-                videos = [
-                    {
-                        id: 1,
-                        title: "Official Music Video",
-                        category: "music",
-                        description: "Latest music video release",
-                        video_url: "https://youtube.com/watch?v=example1",
-                        created_at: new Date().toISOString()
-                    },
-                    {
-                        id: 2,
-                        title: "Live Performance",
-                        category: "live",
-                        description: "Concert footage from recent tour",
-                        video_url: "https://youtube.com/watch?v=example2",
-                        created_at: new Date().toISOString()
-                    },
-                    {
-                        id: 3,
-                        title: "Behind the Scenes",
-                        category: "behind",
-                        description: "Studio recording session footage",
-                        video_url: "https://youtube.com/watch?v=example3",
-                        created_at: new Date().toISOString()
-                    }
-                ];
+                const response = await fetch('/madam-portfolio/backend/api/videos.php');
+                if (response.ok) {
+                    videos = await response.json();
+                } else {
+                    console.error('Failed to load videos');
+                    videos = [];
+                }
                 renderVideos();
             } catch (error) {
                 console.error('Error loading videos:', error);
+                videos = [];
+                renderVideos();
             }
         }
         
@@ -437,6 +419,7 @@ $currentUser = $auth->getCurrentUser();
         
         // Open modal
         function openModal() {
+            console.log('Opening modal');
             document.getElementById('videoModal').style.display = 'block';
             document.getElementById('modalTitle').textContent = 'Add New Video';
             document.getElementById('videoForm').reset();
@@ -465,14 +448,25 @@ $currentUser = $auth->getCurrentUser();
             }
         }
         
-        // Delete video (dashboard mode)
+        // Delete video (from database)
         async function deleteVideo(id) {
             if (confirm('Are you sure you want to delete this video?')) {
                 try {
-                    // Remove from local array
-                    videos = videos.filter(v => v.id !== id);
-                    renderVideos();
-                    alert('Video deleted successfully!');
+                    const response = await fetch('/madam-portfolio/backend/api/videos.php', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ id: id })
+                    });
+                    
+                    if (response.ok) {
+                        alert('Video deleted successfully!');
+                        loadVideos(); // Reload videos from database
+                    } else {
+                        const error = await response.text();
+                        alert('Error deleting video: ' + error);
+                    }
                 } catch (error) {
                     console.error('Error deleting video:', error);
                     alert('Error deleting video');
@@ -480,9 +474,11 @@ $currentUser = $auth->getCurrentUser();
             }
         }
         
-        // Handle form submission (dashboard mode)
+        // Handle form submission (save to database)
         document.getElementById('videoForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            console.log('Form submitted, editingVideo:', editingVideo);
             
             const formData = new FormData(this);
             const videoData = {
@@ -492,23 +488,50 @@ $currentUser = $auth->getCurrentUser();
                 video_url: formData.get('video_url')
             };
             
-            if (editingVideo) {
-                videoData.id = editingVideo.id;
-                // Update existing video
-                const index = videos.findIndex(v => v.id === editingVideo.id);
-                if (index !== -1) {
-                    videos[index] = { ...videos[index], ...videoData };
-                }
-            } else {
-                // Add new video
-                videoData.id = Math.max(...videos.map(v => v.id), 0) + 1;
-                videoData.created_at = new Date().toISOString();
-                videos.push(videoData);
-            }
+            console.log('Video data to save:', videoData);
             
-            renderVideos();
-            alert(editingVideo ? 'Video updated successfully!' : 'Video added successfully!');
-            closeModal();
+            try {
+                let response;
+                if (editingVideo) {
+                    // Update existing video
+                    videoData.id = editingVideo.id;
+                    console.log('Updating video with ID:', editingVideo.id);
+                    response = await fetch('/madam-portfolio/backend/api/videos.php', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(videoData)
+                    });
+                } else {
+                    // Add new video
+                    console.log('Creating new video');
+                    response = await fetch('/madam-portfolio/backend/api/videos.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(videoData)
+                    });
+                }
+                
+                console.log('API response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('API response:', result);
+                    alert(editingVideo ? 'Video updated successfully!' : 'Video added successfully!');
+                    closeModal();
+                    loadVideos(); // Reload videos from database
+                } else {
+                    const error = await response.text();
+                    console.error('API error response:', error);
+                    alert('Error saving video: ' + error);
+                }
+            } catch (error) {
+                console.error('Error saving video:', error);
+                alert('Error saving video');
+            }
         });
         
         // Load videos when page loads
