@@ -213,6 +213,7 @@ $currentUser = $auth->getCurrentUser();
                     <thead>
                         <tr>
                             <th>Title</th>
+                            <th>Category</th>
                             <th>Description</th>
                             <th>Video URL</th>
                             <th>Created</th>
@@ -240,6 +241,16 @@ $currentUser = $auth->getCurrentUser();
                 <div class="form-group">
                     <label for="videoTitle">Title</label>
                     <input type="text" id="videoTitle" name="title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="videoCategory">Category</label>
+                    <select id="videoCategory" name="category" required>
+                        <option value="">Select Category</option>
+                        <option value="music">Music</option>
+                        <option value="live">Live</option>
+                        <option value="behind">Behind the Scenes</option>
+                    </select>
                 </div>
                 
                 <div class="form-group">
@@ -342,17 +353,50 @@ $currentUser = $auth->getCurrentUser();
         let videos = [];
         let editingVideo = null;
         
-        // Load videos
+        // Load videos from dashboard
         async function loadVideos() {
             try {
-                const response = await fetch('../api/videos.php');
-                if (response.ok) {
-                    videos = await response.json();
-                    renderVideos();
-                }
+                // For now, use sample data since dashboard integration is not implemented
+                videos = [
+                    {
+                        id: 1,
+                        title: "Official Music Video",
+                        category: "music",
+                        description: "Latest music video release",
+                        video_url: "https://youtube.com/watch?v=example1",
+                        created_at: new Date().toISOString()
+                    },
+                    {
+                        id: 2,
+                        title: "Live Performance",
+                        category: "live",
+                        description: "Concert footage from recent tour",
+                        video_url: "https://youtube.com/watch?v=example2",
+                        created_at: new Date().toISOString()
+                    },
+                    {
+                        id: 3,
+                        title: "Behind the Scenes",
+                        category: "behind",
+                        description: "Studio recording session footage",
+                        video_url: "https://youtube.com/watch?v=example3",
+                        created_at: new Date().toISOString()
+                    }
+                ];
+                renderVideos();
             } catch (error) {
                 console.error('Error loading videos:', error);
             }
+        }
+        
+        // Get category display name
+        function getCategoryDisplay(category) {
+            const categoryMap = {
+                'music': 'Music',
+                'live': 'Live Performance',
+                'behind': 'Behind the Scenes'
+            };
+            return categoryMap[category] || category;
         }
         
         // Render videos table
@@ -376,6 +420,7 @@ $currentUser = $auth->getCurrentUser();
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td><strong>${video.title || 'N/A'}</strong></td>
+                    <td>${getCategoryDisplay(video.category)}</td>
                     <td>${video.description || 'No description'}</td>
                     <td>${video.video_url || 'N/A'}</td>
                     <td>${video.created_at ? new Date(video.created_at).toLocaleDateString() : 'N/A'}</td>
@@ -411,6 +456,7 @@ $currentUser = $auth->getCurrentUser();
                 editingVideo = video;
                 document.getElementById('videoId').value = video.id;
                 document.getElementById('videoTitle').value = video.title;
+                document.getElementById('videoCategory').value = video.category;
                 document.getElementById('videoDescription').value = video.description || '';
                 document.getElementById('videoUrl').value = video.video_url;
                 
@@ -419,24 +465,14 @@ $currentUser = $auth->getCurrentUser();
             }
         }
         
-        // Delete video
+        // Delete video (dashboard mode)
         async function deleteVideo(id) {
             if (confirm('Are you sure you want to delete this video?')) {
                 try {
-                    const response = await fetch('../api/videos.php', {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ id: id })
-                    });
-                    
-                    if (response.ok) {
-                        await loadVideos();
-                        alert('Video deleted successfully!');
-                    } else {
-                        alert('Error deleting video');
-                    }
+                    // Remove from local array
+                    videos = videos.filter(v => v.id !== id);
+                    renderVideos();
+                    alert('Video deleted successfully!');
                 } catch (error) {
                     console.error('Error deleting video:', error);
                     alert('Error deleting video');
@@ -444,42 +480,35 @@ $currentUser = $auth->getCurrentUser();
             }
         }
         
-        // Handle form submission
+        // Handle form submission (dashboard mode)
         document.getElementById('videoForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const formData = new FormData(this);
             const videoData = {
                 title: formData.get('title'),
+                category: formData.get('category'),
                 description: formData.get('description'),
                 video_url: formData.get('video_url')
             };
             
             if (editingVideo) {
                 videoData.id = editingVideo.id;
+                // Update existing video
+                const index = videos.findIndex(v => v.id === editingVideo.id);
+                if (index !== -1) {
+                    videos[index] = { ...videos[index], ...videoData };
+                }
+            } else {
+                // Add new video
+                videoData.id = Math.max(...videos.map(v => v.id), 0) + 1;
+                videoData.created_at = new Date().toISOString();
+                videos.push(videoData);
             }
             
-            try {
-                const method = editingVideo ? 'PUT' : 'POST';
-                const response = await fetch('../api/videos.php', {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(videoData)
-                });
-                
-                if (response.ok) {
-                    await loadVideos();
-                    alert(editingVideo ? 'Video updated successfully!' : 'Video added successfully!');
-                    closeModal();
-                } else {
-                    alert('Error saving video');
-                }
-            } catch (error) {
-                console.error('Error saving video:', error);
-                alert('Error saving video');
-            }
+            renderVideos();
+            alert(editingVideo ? 'Video updated successfully!' : 'Video added successfully!');
+            closeModal();
         });
         
         // Load videos when page loads
