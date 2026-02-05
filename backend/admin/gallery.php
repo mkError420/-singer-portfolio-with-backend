@@ -490,7 +490,7 @@ $currentUser = $auth->getCurrentUser();
                     
                     <div class="filter-group">
                         <label>&nbsp;</label>
-                        <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+                        <button class="btn btn-secondary text-black" onclick="clearFilters()">Clear Filters</button>
                     </div>
                 </div>
                 

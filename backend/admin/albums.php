@@ -161,12 +161,12 @@ $currentUser = $auth->getCurrentUser();
             font-size: 0.9rem;
             font-weight: 500;
             transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(88, 85, 85, 0.9);
             backdrop-filter: blur(10px);
         }
         
         .filter-group select {
-            color: #2c3e50;
+            color: #e2e7ecff;
             cursor: pointer;
         }
         
@@ -180,6 +180,7 @@ $currentUser = $auth->getCurrentUser();
         .filter-group select:hover {
             border-color: #3498db;
             transform: translateY(-1px);
+            background: rgba(88, 85, 85, 0.9);
         }
         
         .btn-secondary {
@@ -449,7 +450,7 @@ $currentUser = $auth->getCurrentUser();
                     
                     <div class="filter-group">
                         <label>&nbsp;</label>
-                        <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+                        <button class="btn btn-secondary text-black" onclick="clearFilters()">Clear Filters</button>
                     </div>
                 </div>
                 
