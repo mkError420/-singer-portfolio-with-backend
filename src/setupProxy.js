@@ -4,7 +4,7 @@ module.exports = function(app) {
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'http://localhost:80',
+      target: 'http://localhost',
       changeOrigin: true,
       secure: false,
       logLevel: 'debug',
@@ -29,5 +29,5 @@ module.exports = function(app) {
     })
   );
   
-  console.log('✅ Proxy configured for /api -> http://localhost:80/madam-portfolio/backend/api');
+  console.log(' Proxy configured for /api -> http://localhost/madam-portfolio/backend/api');
 };

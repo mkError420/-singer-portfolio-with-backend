@@ -39,7 +39,6 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost/Portfolio/backend",
   "devDependencies": {
     "http-proxy-middleware": "^3.0.5"
   }

@@ -1,13 +1,19 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-require_once '../config/database.php';
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+require_once '../config/config.php';
 
 try {
-    $db = new PDO("mysql:host={$host};dbname={$dbname}", $username, $password);
+    $db = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch(PDOException $e) {
     http_response_code(500);
@@ -49,7 +55,19 @@ function getVideos() {
         $video = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($video) {
-            echo json_encode($video);
+            // Transform database fields to match frontend expectations
+            $transformedVideo = [
+                'id' => $video['id'],
+                'title' => $video['title'],
+                'description' => $video['description'],
+                'thumbnail' => $video['thumbnail'],
+                'duration' => $video['duration'],
+                'category' => $video['category'],
+                'videoId' => extractYouTubeId($video['video_url']),
+                'views' => '0', // Default value since not stored in database
+                'releaseDate' => date('Y', strtotime($video['created_at'])) // Use creation year
+            ];
+            echo json_encode($transformedVideo);
         } else {
             http_response_code(404);
             echo json_encode(['message' => 'Video not found']);
@@ -60,8 +78,43 @@ function getVideos() {
         $stmt->execute();
         
         $videos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode($videos);
+        
+        // Transform each video to match frontend expectations
+        $transformedVideos = array_map(function($video) {
+            return [
+                'id' => $video['id'],
+                'title' => $video['title'],
+                'description' => $video['description'],
+                'thumbnail' => $video['thumbnail'],
+                'duration' => $video['duration'],
+                'category' => $video['category'],
+                'videoId' => extractYouTubeId($video['video_url']),
+                'views' => '0', // Default value since not stored in database
+                'releaseDate' => date('Y', strtotime($video['created_at'])) // Use creation year
+            ];
+        }, $videos);
+        
+        echo json_encode($transformedVideos);
     }
+}
+
+// Helper function to extract YouTube video ID from URL
+function extractYouTubeId($url) {
+    // Handle different YouTube URL formats
+    $patterns = [
+        '/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/',
+        '/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/',
+        '/youtu\.be\/([a-zA-Z0-9_-]+)/'
+    ];
+    
+    foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $url, $matches)) {
+            return $matches[1];
+        }
+    }
+    
+    // If no match found, return the URL as-is or empty string
+    return $url;
 }
 
 function createVideo() {

@@ -37,7 +37,7 @@ const Navbar = () => {
 
   return (
     <>
-      <style jsx>{`
+      <style>{`
         ${ButtonStyles}
         
         /* Enhanced Responsive Design */

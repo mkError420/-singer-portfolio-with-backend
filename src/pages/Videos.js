@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { demoImages } from '../config/demoImages';
 
@@ -6,9 +6,37 @@ const Videos = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [videos, setVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Static demo music videos
-  const musicVideos = [
+  // Fetch videos from backend API
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const response = await fetch('http://localhost/madam-portfolio/backend/api/videos.php');
+        if (response.ok) {
+          const data = await response.json();
+          setVideos(data || []);
+        } else {
+          console.error('Failed to fetch videos:', response.statusText);
+          // Fallback to demo data if API fails
+          setVideos(getDemoVideos());
+        }
+      } catch (error) {
+        console.error('Error fetching videos:', error);
+        // Fallback to demo data if fetch fails
+        setVideos(getDemoVideos());
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVideos();
+  }, []);
+
+  // Demo videos fallback
+  const getDemoVideos = () => {
+    return [
     {
       id: 1,
       title: "Echoes of Emotion",
@@ -118,37 +146,62 @@ const Videos = () => {
     }
   ];
 
-  // Categories for filtering
-  const categories = [
-    { id: 'all', label: 'All Videos', icon: '🎬' },
-    { id: 'music', label: 'Music Videos', icon: '🎵' },
-    { id: 'live', label: 'Live Performances', icon: '🎤' },
-    { id: 'acoustic', label: 'Acoustic', icon: '🎸' },
-    { id: 'behind', label: 'Behind Scenes', icon: '🎥' },
-  ];
-
-  // Filter individual categories for display
-  const filteredMusicVideos = musicVideos.filter(video => {
+  // Filter videos based on search and category
+  const filteredVideos = videos.filter(video => {
     const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         video.description.toLowerCase().includes(searchTerm.toLowerCase());
+                       video.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || video.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   const filteredLivePerformances = livePerformances.filter(video => {
     const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         video.description.toLowerCase().includes(searchTerm.toLowerCase());
+                       video.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || video.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   const filteredBehindTheScenes = behindTheScenes.filter(video => {
     const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         video.description.toLowerCase().includes(searchTerm.toLowerCase());
+                       video.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || video.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
+  // Music videos from the main videos array
+  const musicVideos = videos.filter(video => video.category === 'music');
+
+  const filteredMusicVideos = musicVideos.filter(video => {
+    const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       video.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || video.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Categories for filtering
+  const categories = [
+    { id: 'all', name: 'All Videos' },
+    { id: 'music', name: 'Music Videos' },
+    { id: 'live', name: 'Live Performances' },
+    { id: 'acoustic', name: 'Acoustic' },
+    { id: 'behind', name: 'Behind the Scenes' }
+  ];
+
+  // Get videos to display based on category
+  const getFilteredVideos = () => {
+    switch (selectedCategory) {
+      case 'music':
+        return filteredMusicVideos;
+      case 'live':
+        return filteredLivePerformances;
+      case 'acoustic':
+        return filteredLivePerformances.filter(video => video.category === 'acoustic');
+      case 'behind':
+        return filteredBehindTheScenes;
+      default:
+        return videos;
+    }
+  };
 
   const openVideoModal = (video) => {
     setSelectedVideo(video);
@@ -319,82 +372,93 @@ const Videos = () => {
             gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
             gap: '2rem',
           }}>
-            {filteredMusicVideos.length > 0 ? (
-              filteredMusicVideos.map((video, index) => (
-              <motion.div
-                key={video.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="card"
-                style={{ cursor: 'pointer' }}
-                onClick={() => openVideoModal(video)}
-              >
-                <div style={{ position: 'relative', paddingBottom: '56.25%', overflow: 'hidden', borderRadius: '12px' }}>
-                  <img
-                    src={video.thumbnail}
-                    alt={video.title}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                    }}
-                  />
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '1rem',
-                    right: '1rem',
-                    background: 'rgba(0, 0, 0, 0.8)',
-                    color: 'white',
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '4px',
-                    fontSize: '0.8rem',
-                  }}>
-                    {video.duration}
-                  </div>
-                </div>
-                <div style={{ padding: '1.5rem' }}>
-                  <h3 style={{ color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>
-                    {video.title}
-                  </h3>
-                  <p style={{ color: 'var(--text-secondary)', margin: '0 0 0.5rem', fontSize: '0.9rem' }}>
-                    {video.views} views • {video.releaseDate}
-                  </p>
-                  <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>
-                    {video.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))
-            ) : (
+            {loading ? (
               <div style={{
                 textAlign: 'center',
                 padding: '3rem',
                 color: 'var(--text-secondary)',
-                gridColumn: '1 / -1'
+                fontSize: '1.1rem'
               }}>
-                <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>
-                  No music videos found matching "{searchTerm}"
-                </p>
-                <button
-                  onClick={() => setSearchTerm('')}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    background: 'var(--accent-color)',
-                    border: 'none',
-                    borderRadius: '20px',
-                    color: 'white',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  Clear Search
-                </button>
+                Loading videos...
               </div>
+            ) : (
+              getFilteredVideos().length > 0 ? (
+                getFilteredVideos().map((video, index) => (
+                  <motion.div
+                    key={video.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                    className="card"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => openVideoModal(video)}
+                  >
+                    <div style={{ position: 'relative', paddingBottom: '56.25%', overflow: 'hidden', borderRadius: '12px' }}>
+                      <img
+                        src={video.thumbnail}
+                        alt={video.title}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '1rem',
+                        right: '1rem',
+                        background: 'rgba(0, 0, 0, 0.8)',
+                        color: 'white',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.8rem',
+                      }}>
+                        {video.duration}
+                      </div>
+                    </div>
+                    <div style={{ padding: '1.5rem' }}>
+                      <h3 style={{ color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>
+                        {video.title}
+                      </h3>
+                      <p style={{ color: 'var(--text-secondary)', margin: '0 0 0.5rem', fontSize: '0.9rem' }}>
+                        {video.views} views • {video.releaseDate}
+                      </p>
+                      <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>
+                        {video.description}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '3rem',
+                  color: 'var(--text-secondary)',
+                  gridColumn: '1 / -1'
+                }}>
+                  <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>
+                    No music videos found matching "{searchTerm}"
+                  </p>
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: 'var(--accent-color)',
+                      border: 'none',
+                      borderRadius: '20px',
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    Clear Search
+                  </button>
+                </div>
+              )
             )}
           </div>
         </div>
@@ -582,34 +646,18 @@ const Videos = () => {
                   }}>
                     {video.duration}
                   </div>
-                  <div style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    background: 'rgba(0, 0, 0, 0.7)',
-                    color: 'white',
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.5rem',
-                    transition: 'all 0.3s ease',
-                  }}>
-                    ▶
-                  </div>
                 </div>
-                <h3 style={{ color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>
-                  {video.title}
-                </h3>
-                <p style={{ color: 'var(--text-secondary)', margin: '0 0 0.5rem', fontSize: '0.9rem' }}>
-                  {video.views} views • {video.releaseDate}
-                </p>
-                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>
-                  {video.description}
-                </p>
+                <div style={{ padding: '1.5rem' }}>
+                  <h3 style={{ color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>
+                    {video.title}
+                  </h3>
+                  <p style={{ color: 'var(--text-secondary)', margin: '0 0 0.5rem', fontSize: '0.9rem' }}>
+                    {video.views} views • {video.releaseDate}
+                  </p>
+                  <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>
+                    {video.description}
+                  </p>
+                </div>
               </motion.div>
             ))
             ) : (
@@ -714,7 +762,6 @@ const Videos = () => {
                 style={{ borderRadius: '10px' }}
               />
             </div>
-            
             <div style={{
               padding: '1rem',
               color: 'white',
@@ -731,6 +778,7 @@ const Videos = () => {
       )}
     </div>
   );
+}
 };
 
 export default Videos;
