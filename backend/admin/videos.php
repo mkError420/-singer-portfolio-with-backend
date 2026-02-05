@@ -215,6 +215,8 @@ $currentUser = $auth->getCurrentUser();
                             <th>Title</th>
                             <th>Category</th>
                             <th>Description</th>
+                            <th>Duration</th>
+                            <th>Cover Image</th>
                             <th>Video URL</th>
                             <th>Created</th>
                             <th>Actions</th>
@@ -235,7 +237,7 @@ $currentUser = $auth->getCurrentUser();
                 <h2 id="modalTitle">Add New Video</h2>
                 <span class="close" onclick="closeModal()">&times;</span>
             </div>
-            <form id="videoForm">
+            <form id="videoForm" enctype="multipart/form-data">
                 <input type="hidden" id="videoId">
                 
                 <div class="form-group">
@@ -261,6 +263,23 @@ $currentUser = $auth->getCurrentUser();
                 <div class="form-group">
                     <label for="videoUrl">Video URL</label>
                     <input type="url" id="videoUrl" name="video_url" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="videoDuration">Duration</label>
+                    <input type="text" id="videoDuration" name="duration" placeholder="e.g., 3:45">
+                </div>
+                
+                <div class="form-group">
+                    <label for="videoThumbnail">Cover Image</label>
+                    <input type="file" id="videoThumbnail" name="thumbnail" accept="image/*">
+                    <div id="currentThumbnail" style="margin-top: 0.5rem; display: none;">
+                        <small style="color: #666; font-size: 0.85rem;">Current thumbnail:</small><br>
+                        <img id="currentThumbnailImg" src="" alt="Current thumbnail" style="max-width: 100px; max-height: 100px; border-radius: 4px; margin-top: 0.25rem;">
+                    </div>
+                    <small style="color: #666; font-size: 0.85rem; margin-top: 0.25rem; display: block;">
+                        Upload an image file (JPG, PNG, GIF, WebP). Leave empty to keep existing thumbnail.
+                    </small>
                 </div>
                 
                 <div class="form-actions">
@@ -347,6 +366,40 @@ $currentUser = $auth->getCurrentUser();
             justify-content: flex-end;
             margin-top: 1.5rem;
         }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            table-layout: auto;
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+            vertical-align: middle;
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            white-space: nowrap;
+        }
+        
+        .table td:nth-child(3) {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .table td:nth-child(5) {
+            width: 60px;
+            text-align: center;
+        }
     </style>
     
     <script>
@@ -404,8 +457,15 @@ $currentUser = $auth->getCurrentUser();
                     <td><strong>${video.title || 'N/A'}</strong></td>
                     <td>${getCategoryDisplay(video.category)}</td>
                     <td>${video.description || 'No description'}</td>
-                    <td>${video.video_url || 'N/A'}</td>
-                    <td>${video.created_at ? new Date(video.created_at).toLocaleDateString() : 'N/A'}</td>
+                    <td>${video.duration || 'N/A'}</td>
+                    <td>
+                        ${video.thumbnail ? 
+                            `<img src="${video.thumbnail}" alt="${video.title}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/50x50/333/fff?text=No+Image'">` : 
+                            '<span style="color: #999;">No image</span>'
+                        }
+                    </td>
+                    <td><a href="https://www.youtube.com/watch?v=${video.videoId}" target="_blank" style="color: #667eea; text-decoration: none;">${video.videoId}</a></td>
+                    <td>${video.releaseDate || 'N/A'}</td>
                     <td>
                         <div class="table-actions">
                             <button class="btn btn-edit btn-sm" onclick="editVideo(${video.id})">Edit</button>
@@ -424,6 +484,8 @@ $currentUser = $auth->getCurrentUser();
             document.getElementById('modalTitle').textContent = 'Add New Video';
             document.getElementById('videoForm').reset();
             editingVideo = null;
+            // Hide current thumbnail when adding new video
+            document.getElementById('currentThumbnail').style.display = 'none';
         }
         
         // Close modal
@@ -441,7 +503,20 @@ $currentUser = $auth->getCurrentUser();
                 document.getElementById('videoTitle').value = video.title;
                 document.getElementById('videoCategory').value = video.category;
                 document.getElementById('videoDescription').value = video.description || '';
-                document.getElementById('videoUrl').value = video.video_url;
+                document.getElementById('videoUrl').value = `https://www.youtube.com/watch?v=${video.videoId}`;
+                document.getElementById('videoDuration').value = video.duration || '';
+                // Clear file input for thumbnail (can't pre-populate file inputs for security)
+                document.getElementById('videoThumbnail').value = '';
+                
+                // Show current thumbnail if exists
+                const currentThumbnailDiv = document.getElementById('currentThumbnail');
+                const currentThumbnailImg = document.getElementById('currentThumbnailImg');
+                if (video.thumbnail) {
+                    currentThumbnailDiv.style.display = 'block';
+                    currentThumbnailImg.src = video.thumbnail;
+                } else {
+                    currentThumbnailDiv.style.display = 'none';
+                }
                 
                 document.getElementById('modalTitle').textContent = 'Edit Video';
                 document.getElementById('videoModal').style.display = 'block';
@@ -465,6 +540,9 @@ $currentUser = $auth->getCurrentUser();
                         loadVideos(); // Reload videos from database
                     } else {
                         const error = await response.text();
+                        console.error('Error response:', error);
+                        console.error('Response status:', response.status);
+                        console.error('Response headers:', response.headers);
                         alert('Error deleting video: ' + error);
                     }
                 } catch (error) {
@@ -478,40 +556,73 @@ $currentUser = $auth->getCurrentUser();
         document.getElementById('videoForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            console.log('=== FORM SUBMISSION START ===');
             console.log('Form submitted, editingVideo:', editingVideo);
+            
+            // Validate required fields
+            const title = document.getElementById('videoTitle').value.trim();
+            const category = document.getElementById('videoCategory').value;
+            const videoUrl = document.getElementById('videoUrl').value.trim();
+            
+            if (!title) {
+                alert('Please enter a video title');
+                return;
+            }
+            
+            if (!category) {
+                alert('Please select a category');
+                return;
+            }
+            
+            if (!videoUrl) {
+                alert('Please enter a video URL');
+                return;
+            }
             
             const formData = new FormData(this);
             const videoData = {
                 title: formData.get('title'),
                 category: formData.get('category'),
                 description: formData.get('description'),
-                video_url: formData.get('video_url')
+                video_url: formData.get('video_url'),
+                duration: formData.get('duration')
             };
             
+            // Handle file upload
+            const thumbnailFile = document.getElementById('videoThumbnail').files[0];
+            if (thumbnailFile) {
+                formData.append('thumbnail_file', thumbnailFile);
+            }
+            
+            // Remove thumbnail from videoData since we're handling file separately
+            delete videoData.thumbnail;
+            
             console.log('Video data to save:', videoData);
+            console.log('Thumbnail file:', thumbnailFile);
+            console.log('FormData before sending:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}:`, value);
+            }
             
             try {
                 let response;
                 if (editingVideo) {
                     // Update existing video
                     videoData.id = editingVideo.id;
+                    formData.append('video_data', JSON.stringify(videoData));
+                    formData.append('_method', 'PUT'); // Use POST with method override
                     console.log('Updating video with ID:', editingVideo.id);
                     response = await fetch('/madam-portfolio/backend/api/videos.php', {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(videoData)
+                        method: 'POST',
+                        body: formData
                     });
                 } else {
                     // Add new video
+                    formData.append('video_data', JSON.stringify(videoData));
                     console.log('Creating new video');
                     response = await fetch('/madam-portfolio/backend/api/videos.php', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(videoData)
+                        body: formData
                     });
                 }
                 
@@ -526,6 +637,8 @@ $currentUser = $auth->getCurrentUser();
                 } else {
                     const error = await response.text();
                     console.error('API error response:', error);
+                    console.error('Response status:', response.status);
+                    console.error('Response headers:', response.headers);
                     alert('Error saving video: ' + error);
                 }
             } catch (error) {
