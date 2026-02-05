@@ -261,7 +261,7 @@ const Gallery = () => {
       {/* Filter Dropdowns */}
       <section className="gallery-filters" style={{
         padding: '3rem 0',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #55565cff 0%, #5a595affff 100%)',
         position: 'relative',
         overflow: 'hidden',
       }}>
@@ -305,490 +305,459 @@ const Gallery = () => {
             </p>
           </motion.div>
 
+          {/* Modern Grid Filter Design */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '2rem',
-            flexWrap: 'wrap',
-            maxWidth: '900px',
+            maxWidth: '1200px',
             margin: '0 auto',
+            padding: '0 2rem',
           }}>
-            {/* Category Filter Pills */}
+            {/* Filter Grid Container */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+              transition={{ duration: 0.8 }}
               style={{
-                marginBottom: '2rem',
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                padding: '1.5rem',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
               }}
             >
-              <h3 style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                margin: '0 0 1rem',
-                textAlign: 'center',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-              }}>
-                <span style={{ fontSize: '1.3rem' }}>🎨</span>
-                Categories
-              </h3>
+              {/* Filter Header */}
               <div style={{
                 display: 'flex',
-                justifyContent: 'center',
-                gap: '0.75rem',
-                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '2rem',
+                paddingBottom: '1.5rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
               }}>
-                {categories.map((category) => (
-                  <motion.button
-                    key={category.id}
-                    onClick={() => setFilter(category.id)}
-                    whileHover={{ scale: 1.05, y: -3 }}
-                    whileTap={{ scale: 0.95 }}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.2rem',
+                  }}>
+                    🎯
+                  </div>
+                  <div>
+                    <h2 style={{
+                      color: 'white',
+                      fontSize: '1.5rem',
+                      fontWeight: '700',
+                      margin: '0 0 0.25rem',
+                      textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+                    }}>
+                      Gallery Filters
+                    </h2>
+                    <p style={{
+                      color: 'rgba(255, 255, 255, 0.8)',
+                      fontSize: '0.95rem',
+                      margin: '0',
+                      fontWeight: '400',
+                    }}>
+                      Filter by category, month, or year
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Active Filters Display */}
+                {(filter !== 'all' || selectedMonth !== 'all' || selectedYear !== 'all') && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '20px',
+                    fontSize: '0.85rem',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                  }}>
+                    <span style={{ opacity: '0.7' }}>Active:</span>
+                    {filter !== 'all' && (
+                      <span style={{
+                        background: 'linear-gradient(135deg, #686363ff, #554038ff)',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '12px',
+                        marginLeft: '0.5rem',
+                        fontSize: '0.8rem',
+                        fontWeight: '600',
+                      }}>
+                        {categories.find(c => c.id === filter)?.label}
+                      </span>
+                    )}
+                    {selectedMonth !== 'all' && (
+                      <span style={{
+                        background: 'linear-gradient(135deg, #f093fb, #f5576c)',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '12px',
+                        marginLeft: '0.5rem',
+                        fontSize: '0.8rem',
+                        fontWeight: '600',
+                      }}>
+                        {getMonthName(selectedMonth)}
+                      </span>
+                    )}
+                    {selectedYear !== 'all' && (
+                      <span style={{
+                        background: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '12px',
+                        marginLeft: '0.5rem',
+                        fontSize: '0.8rem',
+                        fontWeight: '600',
+                      }}>
+                        {selectedYear}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Filter Grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: '1rem',
+              }}>
+                {/* Categories Section */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                  }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.9rem',
+                    }}>
+                      🎨
+                    </div>
+                    <h3 style={{
+                      color: 'white',
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      margin: '0',
+                    }}>
+                      Categories
+                    </h3>
+                  </div>
+                  
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                    gap: '0.75rem',
+                  }}>
+                    {categories.map((category) => (
+                      <motion.button
+                        key={category.id}
+                        onClick={() => setFilter(category.id)}
+                        whileHover={{ scale: 1.03, y: -2 }}
+                        whileTap={{ scale: 0.97 }}
+                        style={{
+                          padding: '0.75rem 1rem',
+                          borderRadius: '12px',
+                          background: filter === category.id 
+                            ? 'linear-gradient(135deg, #ff6b6b, #ee5a24)' 
+                            : 'rgba(255, 255, 255, 0.08)',
+                          border: filter === category.id 
+                            ? '1px solid rgba(255, 107, 107, 0.3)' 
+                            : '1px solid rgba(255, 255, 255, 0.15)',
+                          color: 'white',
+                          fontSize: '0.85rem',
+                          fontWeight: filter === category.id ? '600' : '500',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          position: 'relative',
+                          overflow: 'hidden',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (filter !== category.id) {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (filter !== category.id) {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                          }
+                        }}
+                      >
+                        <span>{category.label}</span>
+                        <span style={{
+                          background: filter === category.id 
+                            ? 'rgba(255, 255, 255, 0.2)' 
+                            : 'rgba(255, 255, 255, 0.1)',
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '8px',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                        }}>
+                          {categoryCounts[category.id] || 0}
+                        </span>
+                        {filter === category.id && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', stiffness: 500 }}
+                            style={{
+                              position: 'absolute',
+                              top: '6px',
+                              right: '6px',
+                              width: '8px',
+                              height: '8px',
+                              background: '#ff6b6b',
+                              borderRadius: '50%',
+                              border: '2px solid white',
+                              boxShadow: '0 2px 8px rgba(255, 107, 107, 0.4)',
+                            }}
+                          />
+                        )}
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* Months Section */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                  }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #f093fb, #f5576c)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.9rem',
+                    }}>
+                      📅
+                    </div>
+                    <h3 style={{
+                      color: 'white',
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      margin: '0',
+                    }}>
+                      Months
+                    </h3>
+                  </div>
+                  
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
                     style={{
-                      padding: '0.6rem 1.2rem',
-                      borderRadius: '25px',
-                      background: filter === category.id 
-                        ? 'linear-gradient(135deg, #ff6b6b, #ee5a24)' 
-                        : 'rgba(255, 255, 255, 0.15)',
-                      border: filter === category.id 
-                        ? '2px solid #ff6b6b' 
-                        : '1px solid rgba(255, 255, 255, 0.3)',
+                      width: '100%',
+                      padding: '0.6rem',
+                      borderRadius: '8px',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
                       color: 'white',
                       fontSize: '0.85rem',
-                      fontWeight: filter === category.id ? '600' : '500',
                       cursor: 'pointer',
+                      outline: 'none',
                       transition: 'all 0.3s ease',
-                      boxShadow: filter === category.id 
-                        ? '0 6px 20px rgba(255, 107, 107, 0.4)' 
-                        : '0 4px 15px rgba(0, 0, 0, 0.1)',
-                      backdropFilter: 'blur(10px)',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      minWidth: '100px',
                     }}
                     onMouseEnter={(e) => {
-                      if (filter !== category.id) {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-                      }
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
                     }}
                     onMouseLeave={(e) => {
-                      if (filter !== category.id) {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                      }
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
                     }}
                   >
-                    <span style={{ position: 'relative', zIndex: 1 }}>
-                      {category.label}
-                    </span>
-                    <span style={{
-                      background: filter === category.id 
-                        ? 'rgba(255, 255, 255, 0.2)' 
-                        : 'rgba(255, 255, 255, 0.1)',
-                      padding: '0.15rem 0.4rem',
-                      borderRadius: '10px',
-                      fontSize: '0.75rem',
-                      marginLeft: '0.5rem',
+                    <option value="all" style={{ background: '#333' }}>All Months</option>
+                    {getAvailableMonths().map((month) => (
+                      <option key={`month-${month}`} value={month} style={{ background: '#333' }}>
+                        {getMonthName(month)}
+                      </option>
+                    ))}
+                  </select>
+                </motion.div>
+
+                {/* Years Section */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                  }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.9rem',
                     }}>
-                      {categoryCounts[category.id] || 0}
-                    </span>
-                    {filter === category.id && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: 'spring', stiffness: 400 }}
-                        style={{
-                          position: 'absolute',
-                          top: '-2px',
-                          right: '-2px',
-                          width: '12px',
-                          height: '12px',
-                          background: '#ff6b6b',
-                          borderRadius: '50%',
-                          border: '2px solid white',
-                        }}
-                      />
-                    )}
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Month Filter Pills */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              style={{
-                marginBottom: '2rem',
-              }}
-            >
-              <h3 style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                margin: '0 0 1rem',
-                textAlign: 'center',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-              }}>
-                <span style={{ fontSize: '1.3rem' }}>📅</span>
-                Months
-              </h3>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                flexWrap: 'wrap',
-              }}>
-                <motion.button
-                  key="month-all"
-                  onClick={() => setSelectedMonth('all')}
-                  whileHover={{ scale: 1.05, y: -3 }}
-                  whileTap={{ scale: 0.95 }}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '20px',
-                    background: selectedMonth === 'all' 
-                      ? 'linear-gradient(135deg, #f093fb, #f5576c)' 
-                      : 'rgba(255, 255, 255, 0.15)',
-                    border: selectedMonth === 'all' 
-                      ? '2px solid #f093fb' 
-                      : '1px solid rgba(255, 255, 255, 0.3)',
-                    color: 'white',
-                    fontSize: '0.8rem',
-                    fontWeight: selectedMonth === 'all' ? '600' : '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: selectedMonth === 'all' 
-                      ? '0 6px 20px rgba(240, 147, 251, 0.4)' 
-                      : '0 4px 15px rgba(0, 0, 0, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedMonth !== 'all') {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedMonth !== 'all') {
+                      📆
+                    </div>
+                    <h3 style={{
+                      color: 'white',
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      margin: '0',
+                    }}>
+                      Years
+                    </h3>
+                  </div>
+                  
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem',
+                      borderRadius: '8px',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: 'white',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      transition: 'all 0.3s ease',
+                    }}
+                    onMouseEnter={(e) => {
                       e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
                       e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                    }
-                  }}
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    }}
+                  >
+                    <option value="all" style={{ background: '#333' }}>All Years</option>
+                    {getAvailableYears().map((year) => (
+                      <option key={`year-${year}`} value={year} style={{ background: '#333' }}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </motion.div>
+              </div>
+
+              {/* Clear Filters Button */}
+              {(filter !== 'all' || selectedMonth !== 'all' || selectedYear !== 'all') && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  style={{ textAlign: 'center', marginTop: '2rem' }}
                 >
-                  <span style={{ position: 'relative', zIndex: 1 }}>
-                    All Months
-                  </span>
-                  {selectedMonth === 'all' && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 400 }}
-                      style={{
-                        position: 'absolute',
-                        top: '-2px',
-                        right: '-2px',
-                        width: '10px',
-                        height: '10px',
-                        background: '#f093fb',
-                        borderRadius: '50%',
-                        border: '2px solid white',
-                      }}
-                    />
-                  )}
-                </motion.button>
-                
-                {getAvailableMonths().map((month) => (
                   <motion.button
-                    key={`month-${month}`}
-                    onClick={() => setSelectedMonth(month)}
-                    whileHover={{ scale: 1.05, y: -3 }}
+                    onClick={() => {
+                      setFilter('all');
+                      setSelectedMonth('all');
+                      setSelectedYear('all');
+                    }}
+                    whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     style={{
-                      padding: '0.5rem 1rem',
-                      borderRadius: '20px',
-                      background: selectedMonth === month 
-                        ? 'linear-gradient(135deg, #f093fb, #f5576c)' 
-                        : 'rgba(255, 255, 255, 0.15)',
-                      border: selectedMonth === month 
-                        ? '2px solid #f093fb' 
-                        : '1px solid rgba(255, 255, 255, 0.3)',
+                      fontSize: '0.95rem',
+                      padding: '1rem 2rem',
+                      borderRadius: '16px',
+                      background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
+                      border: 'none',
                       color: 'white',
-                      fontSize: '0.8rem',
-                      fontWeight: selectedMonth === month ? '600' : '500',
+                      fontWeight: '600',
                       cursor: 'pointer',
                       transition: 'all 0.3s ease',
-                      boxShadow: selectedMonth === month 
-                        ? '0 6px 20px rgba(240, 147, 251, 0.4)' 
-                        : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                      boxShadow: '0 8px 25px rgba(255, 107, 107, 0.4)',
                       backdropFilter: 'blur(10px)',
                       position: 'relative',
                       overflow: 'hidden',
                     }}
                     onMouseEnter={(e) => {
-                      if (selectedMonth !== month) {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-                      }
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 12px 35px rgba(255, 107, 107, 0.5)';
                     }}
                     onMouseLeave={(e) => {
-                      if (selectedMonth !== month) {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                      }
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 107, 107, 0.4)';
                     }}
                   >
                     <span style={{ position: 'relative', zIndex: 1 }}>
-                      {getMonthName(month).slice(0, 3)}
+                      🔄 Clear All Filters
                     </span>
-                    {selectedMonth === month && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: 'spring', stiffness: 400 }}
-                        style={{
-                          position: 'absolute',
-                          top: '-2px',
-                          right: '-2px',
-                          width: '10px',
-                          height: '10px',
-                          background: '#f093fb',
-                          borderRadius: '50%',
-                          border: '2px solid white',
-                        }}
-                      />
-                    )}
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Year Filter Pills */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              style={{
-                marginBottom: '2rem',
-              }}
-            >
-              <h3 style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                margin: '0 0 1rem',
-                textAlign: 'center',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-              }}>
-                <span style={{ fontSize: '1.3rem' }}>📆</span>
-                Years
-              </h3>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                flexWrap: 'wrap',
-              }}>
-                <motion.button
-                  key="year-all"
-                  onClick={() => setSelectedYear('all')}
-                  whileHover={{ scale: 1.05, y: -3 }}
-                  whileTap={{ scale: 0.95 }}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '20px',
-                    background: selectedYear === 'all' 
-                      ? 'linear-gradient(135deg, #4facfe, #00f2fe)' 
-                      : 'rgba(255, 255, 255, 0.15)',
-                    border: selectedYear === 'all' 
-                      ? '2px solid #4facfe' 
-                      : '1px solid rgba(255, 255, 255, 0.3)',
-                    color: 'white',
-                    fontSize: '0.8rem',
-                    fontWeight: selectedYear === 'all' ? '600' : '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: selectedYear === 'all' 
-                      ? '0 6px 20px rgba(79, 172, 254, 0.4)' 
-                      : '0 4px 15px rgba(0, 0, 0, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedYear !== 'all') {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedYear !== 'all') {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                    }
-                  }}
-                >
-                  <span style={{ position: 'relative', zIndex: 1 }}>
-                    All Years
-                  </span>
-                  {selectedYear === 'all' && (
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 400 }}
+                      transition={{ delay: 0.2 }}
                       style={{
                         position: 'absolute',
-                        top: '-2px',
-                        right: '-2px',
-                        width: '10px',
-                        height: '10px',
-                        background: '#4facfe',
-                        borderRadius: '50%',
-                        border: '2px solid white',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'linear-gradient(45deg, rgba(255, 255, 255, 0.1), transparent)',
+                        borderRadius: '16px',
                       }}
                     />
-                  )}
-                </motion.button>
-                
-                {getAvailableYears().map((year) => (
-                  <motion.button
-                    key={`year-${year}`}
-                    onClick={() => setSelectedYear(year)}
-                    whileHover={{ scale: 1.05, y: -3 }}
-                    whileTap={{ scale: 0.95 }}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      borderRadius: '20px',
-                      background: selectedYear === year 
-                        ? 'linear-gradient(135deg, #4facfe, #00f2fe)' 
-                        : 'rgba(255, 255, 255, 0.15)',
-                      border: selectedYear === year 
-                        ? '2px solid #4facfe' 
-                        : '1px solid rgba(255, 255, 255, 0.3)',
-                      color: 'white',
-                      fontSize: '0.8rem',
-                      fontWeight: selectedYear === year ? '600' : '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      boxShadow: selectedYear === year 
-                        ? '0 6px 20px rgba(79, 172, 254, 0.4)' 
-                        : '0 4px 15px rgba(0, 0, 0, 0.1)',
-                      backdropFilter: 'blur(10px)',
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (selectedYear !== year) {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedYear !== year) {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                      }
-                    }}
-                  >
-                    <span style={{ position: 'relative', zIndex: 1 }}>
-                      {year}
-                    </span>
-                    {selectedYear === year && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: 'spring', stiffness: 400 }}
-                        style={{
-                          position: 'absolute',
-                          top: '-2px',
-                          right: '-2px',
-                          width: '10px',
-                          height: '10px',
-                          background: '#4facfe',
-                          borderRadius: '50%',
-                          border: '2px solid white',
-                        }}
-                      />
-                    )}
                   </motion.button>
-                ))}
-              </div>
+                </motion.div>
+              )}
             </motion.div>
-
-            {/* Clear Filters Button */}
-            {(filter !== 'all' || selectedMonth !== 'all' || selectedYear !== 'all') && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                style={{ textAlign: 'center', marginTop: '2rem', width: '100%' }}
-              >
-                <motion.button
-                  onClick={() => {
-                    setFilter('all');
-                    setSelectedMonth('all');
-                    setSelectedYear('all');
-                  }}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  style={{
-                    fontSize: '1rem',
-                    padding: '1rem 2rem',
-                    borderRadius: '50px',
-                    background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
-                    border: 'none',
-                    color: 'white',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: '0 4px 20px rgba(255, 107, 107, 0.4)',
-                    backdropFilter: 'blur(10px)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 25px rgba(255, 107, 107, 0.5)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(255, 107, 107, 0.4)';
-                  }}
-                >
-                  <span style={{ position: 'relative', zIndex: 1 }}>
-                    🔄 Clear All Filters
-                  </span>
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.2 }}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'linear-gradient(45deg, rgba(255, 255, 255, 0.1), transparent)',
-                      borderRadius: '50px',
-                    }}
-                  />
-                </motion.button>
-              </motion.div>
-            )}
           </div>
         </div>
       </section>
