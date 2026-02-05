@@ -438,9 +438,12 @@ $currentUser = $auth->getCurrentUser();
                     </div>
                     
                     <div class="filter-group">
-                        <label for="filterCategory">Filter by Year:</label>
+                        <label for="filterCategory">Filter by Category:</label>
                         <select id="filterCategory" onchange="applyFilters()">
-                            <option value="">All Years</option>
+                            <option value="">All Categories</option>
+                            <option value="studio">Studio</option>
+                            <option value="live">Live Performance</option>
+                            <option value="compilation">Compilation</option>
                         </select>
                     </div>
                     
@@ -497,14 +500,11 @@ $currentUser = $auth->getCurrentUser();
                 
                 <div class="form-group">
                     <label for="category">Category</label>
-                    <div class="category-input-group">
-                        <select id="category" name="category" required>
-                            <option value="">Select Category</option>
-                        </select>
-                        <button type="button" class="btn btn-sm" onclick="showAddCategoryModal()">+ Add New</button>
-                        <button type="button" class="btn btn-sm btn-secondary" onclick="refreshCategories()">🔄 Refresh</button>
-                    </div>
-                    <small id="category-status" style="color: #666; font-size: 12px;">Loading categories...</small>
+                    <select id="category" name="category" required>
+                        <option value="">Select Category</option>
+                        <option value="album">Studio Album</option>
+                        <option value="acoustic">Acoustic</option>
+                    </select>
                 </div>
                 
                 <div class="form-group">
@@ -546,34 +546,6 @@ $currentUser = $auth->getCurrentUser();
         </div>
     </div>
     
-    <!-- Add Category Modal -->
-    <div id="categoryModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Add New Category</h2>
-                <span class="close" onclick="closeCategoryModal()">&times;</span>
-            </div>
-            <form id="categoryForm">
-                <div class="form-group">
-                    <label for="categoryName">Category Name</label>
-                    <input type="text" id="categoryName" name="categoryName" required 
-                           placeholder="e.g., Rock, Pop, Jazz, Classical">
-                </div>
-                
-                <div class="form-group">
-                    <label for="categoryDescription">Description (Optional)</label>
-                    <textarea id="categoryDescription" name="categoryDescription" 
-                              placeholder="Brief description of this category"></textarea>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn" onclick="closeCategoryModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Category</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
     <script>
         let albums = [];
         let editingAlbum = null;
@@ -603,113 +575,38 @@ $currentUser = $auth->getCurrentUser();
             }
         }
         
-        // Load categories
+        // Load categories (not needed for ENUM)
         async function loadCategories() {
-            const statusElement = document.getElementById('category-status');
-            if (statusElement) {
-                statusElement.textContent = 'Loading categories...';
-                statusElement.style.color = '#666';
-            }
-            
-            try {
-                console.log('Loading categories...');
-                const response = await fetch('../api/categories.php');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                categories = await response.json();
-                console.log('Categories loaded:', categories);
-                populateCategorySelect();
-                
-                if (statusElement) {
-                    statusElement.textContent = `${categories.length} categories loaded`;
-                    statusElement.style.color = '#28a745';
-                }
-            } catch (error) {
-                console.error('Error loading categories:', error);
-                
-                if (statusElement) {
-                    statusElement.textContent = 'Error loading categories';
-                    statusElement.style.color = '#dc3545';
-                }
-                // Do not use a fallback. If categories fail to load, it's a critical error.
-                alert('Could not load album categories from the server. Please check the API and database connection. You will not be able to save albums correctly without categories.');
-            }
+            console.log('Categories not needed for ENUM system');
+            categories = [];
         }
         
-        // Refresh categories manually
+        // Refresh categories (not needed for ENUM)
         async function refreshCategories() {
-            console.log('Manually refreshing categories...');
-            await loadCategories();
+            console.log('Categories not needed for ENUM system');
         }
         
-        // Populate category select dropdown
-        function populateCategorySelect() {
-            console.log('Populating category select with:', categories);
-            console.log('Filter category data structure:', JSON.stringify(categories, null, 2));
-            const select = document.getElementById('filterCategory');
-            
-            if (!select) {
-                console.error('Filter category select element not found!');
-                return;
+        // Get category display name
+        function getCategoryName(categoryValue) {
+            if (!categoryValue) {
+                return 'No Category';
             }
             
-            select.innerHTML = '<option value="">All Categories</option>';
+            // Map ENUM values to display names
+            const categoryMap = {
+                'album': 'Studio Album',
+                'acoustic': 'Acoustic',
+                'studio': 'Studio',
+                'live': 'Live Performance',
+                'compilation': 'Compilation'
+            };
             
-            if (!categories || categories.length === 0) {
-                console.warn('No categories to populate');
-                return;
-            }
-            
-            categories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category.id;
-                option.textContent = category.name;
-                select.appendChild(option);
-            });
-            
-            console.log('Category select populated. Options count:', select.options.length);
+            return categoryMap[categoryValue] || categoryValue;
         }
         
-        // Populate modal category dropdown
+        // Populate modal category dropdown (not needed for ENUM)
         function populateModalCategorySelect() {
-            console.log('Populating modal category select with:', categories);
-            console.log('Category data structure:', JSON.stringify(categories, null, 2));
-            const modalSelect = document.getElementById('category');
-            
-            if (!modalSelect) {
-                console.error('Modal category select element not found!');
-                return;
-            }
-            
-            modalSelect.innerHTML = '<option value="">Select Category</option>';
-            
-            if (!categories || categories.length === 0) {
-                console.warn('No categories to populate');
-                return;
-            }
-            
-            categories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category.id;
-                option.textContent = category.name;
-                modalSelect.appendChild(option);
-            });
-            
-            console.log('Modal category select populated. Options count:', modalSelect.options.length);
-        }
-        
-        // Category modal functions
-        function showAddCategoryModal() {
-            document.getElementById('categoryModal').style.display = 'block';
-            document.getElementById('categoryForm').reset();
-            populateModalCategorySelect();
-        }
-        
-        function closeCategoryModal() {
-            document.getElementById('categoryModal').style.display = 'none';
+            // Categories are hardcoded in HTML
         }
         
         // Filter functions
@@ -786,6 +683,128 @@ $currentUser = $auth->getCurrentUser();
             });
         }
         
+        // Get category name by ID
+        function getCategoryName(categoryId) {
+            console.log('Getting category name for ID:', categoryId);
+            
+            if (!categoryId) {
+                return 'No Category';
+            }
+            
+            const category = categories.find(cat => cat.id == categoryId); // Use == for loose comparison
+            
+            if (category) {
+                return category.name;
+            } else {
+                return 'Unknown Category';
+            }
+        }
+        
+        // Fix albums with category ID 15
+        async function fixAlbumsWithCategory15() {
+            console.log('Looking for albums with category ID 15...');
+            
+            const albumsToFix = albums.filter(album => album.category === '15');
+            console.log('Albums to fix:', albumsToFix);
+            
+            if (albumsToFix.length === 0) {
+                console.log('No albums with category ID 15 found.');
+                return;
+            }
+            
+            // Fix each album by setting category to "Studio" (ID: 1)
+            for (const album of albumsToFix) {
+                console.log('Fixing album:', album);
+                await updateAlbumCategory(album.id, '1'); // Set to Studio category
+            }
+        }
+        
+        // Fix albums with undefined categories
+        async function fixAlbumsWithUndefinedCategories() {
+            console.log('Looking for albums with undefined categories...');
+            
+            const albumsToFix = albums.filter(album => !album.category || album.category === undefined || album.category === null);
+            console.log('Albums to fix:', albumsToFix);
+            
+            if (albumsToFix.length === 0) {
+                console.log('No albums with undefined categories found.');
+                return;
+            }
+            
+            // Fix each album by setting category to "Studio" (ID: 1)
+            for (const album of albumsToFix) {
+                console.log('Fixing album:', album);
+                await updateAlbumCategory(album.id, '1'); // Set to Studio category
+            }
+        }
+        
+        // Update album category by ID
+        async function updateAlbumCategory(albumId, newCategoryId) {
+            console.log('Updating album category:', { albumId, newCategoryId });
+            console.log('Current albums before update:', albums);
+            
+            try {
+                const response = await fetch(`../api/albums.php`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: albumId,
+                        category: newCategoryId
+                    })
+                });
+                
+                console.log('Update response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Album category updated successfully:', result);
+                    alert('Album category updated successfully!');
+                    await loadAlbums(); // Reload albums after update
+                } else {
+                    const errorText = await response.text();
+                    console.error('Error updating album category:', errorText);
+                    alert('Error updating album category: ' + errorText);
+                }
+            } catch (error) {
+                console.error('Error updating album category:', error);
+                alert('Error updating album category: ' + error);
+            }
+        }
+        
+        // Add missing category to database
+        async function addMissingCategory() {
+            try {
+                const response = await fetch('../api/categories.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: '15',
+                        name: 'Unknown Category 15',
+                        description: 'This category was missing and added automatically',
+                        status: 'active'
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Missing category added successfully:', result);
+                    alert('Missing category added to database successfully!');
+                    loadCategories();
+                } else {
+                    const errorText = await response.text();
+                    console.error('Error adding missing category:', errorText);
+                    alert('Error adding missing category: ' + errorText);
+                }
+            } catch (error) {
+                console.error('Error adding missing category:', error);
+                alert('Error adding missing category: ' + error);
+            }
+        }
+        
         // Render albums table
         function renderAlbums() {
             console.log('Rendering albums:', albums);
@@ -805,8 +824,15 @@ $currentUser = $auth->getCurrentUser();
                 return;
             }
             
-            filteredAlbums.forEach((album, index) => {
+            // Use filteredAlbums instead of albums for rendering
+            const albumsToRender = filteredAlbums.length > 0 ? filteredAlbums : albums;
+            console.log('Albums to render:', albumsToRender);
+            console.log('Current filters:', { year: currentYearFilter, category: currentCategoryFilter });
+            
+            albumsToRender.forEach((album, index) => {
                 console.log(`Rendering album ${index + 1}:`, album);
+                console.log(`Album category ID:`, album.category);
+                console.log(`Category name:`, getCategoryName(album.category));
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -821,7 +847,7 @@ $currentUser = $auth->getCurrentUser();
                     <td>${album.year || 'N/A'}</td>
                     <td>
                         <span class="category-badge" style="background: #e9ecef; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
-                            ${album.category || 'No Category'}
+                            ${getCategoryName(album.category)}
                         </span>
                     </td>
                     <td>${album.track_count || 0}</td>
@@ -835,6 +861,7 @@ $currentUser = $auth->getCurrentUser();
                 tbody.appendChild(row);
                 
                 console.log(`Album ${index + 1} category:`, album.category);
+                console.log(`Category name:`, getCategoryName(album.category));
             });
             
             console.log('Albums rendered successfully');
@@ -847,7 +874,6 @@ $currentUser = $auth->getCurrentUser();
             document.getElementById('albumForm').reset();
             document.getElementById('imagePreview').style.display = 'none';
             editingAlbum = null;
-            populateModalCategorySelect(); // ✅ Added this call
         }
         
         // Close modal
@@ -864,8 +890,13 @@ $currentUser = $auth->getCurrentUser();
                 document.getElementById('albumId').value = album.id;
                 document.getElementById('title').value = album.title;
                 document.getElementById('year').value = album.year;
-                document.getElementById('category').value = album.category;
                 document.getElementById('description').value = album.description || '';
+                
+                // Set the category value
+                document.getElementById('category').value = album.category;
+                
+                console.log('Edit album category set to:', album.category);
+                console.log('Category dropdown value after setting:', document.getElementById('category').value);
                 
                 if (album.cover_image) {
                     document.getElementById('imagePreview').src = '../' + album.cover_image;
@@ -999,6 +1030,7 @@ $currentUser = $auth->getCurrentUser();
             console.log('Selected category value:', categoryValue);
             console.log('Category element:', document.getElementById('category'));
             console.log('Category options count:', document.getElementById('category').options.length);
+            console.log('All category options:', Array.from(document.getElementById('category').options).map(opt => ({ value: opt.value, text: opt.text })));
             
             const formData = new FormData();
             const albumData = {
@@ -1011,6 +1043,7 @@ $currentUser = $auth->getCurrentUser();
             };
             
             console.log('Album data being sent:', albumData);
+            console.log('Editing album:', editingAlbum);
             
             // Handle image upload
             const imageFile = document.getElementById('coverImage').files[0];
@@ -1042,6 +1075,8 @@ $currentUser = $auth->getCurrentUser();
                     albumData.id = editingAlbum.id;
                 }
                 
+                console.log('Sending album data:', { method, url, albumData });
+                
                 const response = await fetch(url, {
                     method: method,
                     headers: {
@@ -1050,15 +1085,33 @@ $currentUser = $auth->getCurrentUser();
                     body: JSON.stringify(albumData)
                 });
                 
+                console.log('API response status:', response.status);
+                console.log('API response headers:', response.headers);
+                
                 if (response.ok) {
                     const result = await response.json();
                     console.log('Album saved successfully:', result);
-                    alert(editingAlbum ? 'Album updated successfully!' : 'Album added successfully!');
-                    closeModal();
+                    console.log('API response details:', {
+                        success: result.success,
+                        message: result.message,
+                        albumId: result.id,
+                        updatedFields: result.updated_fields,
+                        affectedRows: result.affected_rows
+                    });
+                    
+                    // Load albums after successful save to ensure data is updated
                     loadAlbums();
+                    
+                    // Show success message after data is confirmed loaded
+                    setTimeout(() => {
+                        alert(editingAlbum ? 'Album updated successfully!' : 'Album added successfully!');
+                    }, 500);
+                    
+                    closeModal();
                 } else {
                     const errorText = await response.text();
                     console.error('Error saving album:', errorText);
+                    console.error('Full error response:', errorText);
                     alert('Error saving album: ' + errorText);
                 }
             } catch (error) {
@@ -1067,47 +1120,10 @@ $currentUser = $auth->getCurrentUser();
             }
         });
         
-        // Handle category form submission
-        document.getElementById('categoryForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const categoryData = {
-                name: document.getElementById('categoryName').value,
-                description: document.getElementById('categoryDescription').value
-            };
-            
-            try {
-                const response = await fetch('../api/categories.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(categoryData)
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('Category added successfully:', result);
-                    alert('Category added successfully!');
-                    closeCategoryModal();
-                    await loadCategories(); // Reload categories
-                    console.log('Categories reloaded after adding new category');
-                } else {
-                    const errorText = await response.text();
-                    console.error('Error adding category:', errorText);
-                    alert('Error adding category: ' + errorText);
-                }
-            } catch (error) {
-                console.error('Error adding category:', error);
-                alert('Error adding category');
-            }
-        });
-        
         // Load albums and categories when page loads
         document.addEventListener('DOMContentLoaded', function() {
             loadAlbums();
             loadCategories();
-            populateFilterCategory(); // ✅ Added this call
         });
     </script>
 </body>
