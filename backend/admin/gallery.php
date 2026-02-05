@@ -20,8 +20,10 @@ $currentUser = $auth->getCurrentUser();
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            margin: 0;
+            padding: 0;
         }
         
         .dashboard-container {
@@ -70,102 +72,221 @@ $currentUser = $auth->getCurrentUser();
         .main-content {
             flex: 1;
             padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
         }
         
         .header {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             margin-bottom: 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .header h1 {
             color: #2c3e50;
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         
         .btn {
-            padding: 0.5rem 1rem;
+            padding: 0.75rem 1.5rem;
             border: none;
-            border-radius: 5px;
+            border-radius: 12px;
             cursor: pointer;
             text-decoration: none;
             font-size: 0.9rem;
-            transition: background 0.3s ease;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
         
         .btn-primary {
-            background: #3498db;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
         
         .btn-edit {
-            background: #f39c12;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
         }
         
         .btn-delete {
-            background: #e74c3c;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
         }
         
         .btn:hover {
-            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Filter Section Styles */
+        .filter-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .filter-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .filter-group select,
+        .filter-group button {
+            padding: 1rem;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+        
+        .filter-group select {
+            color: #2c3e50;
+            cursor: pointer;
+        }
+        
+        .filter-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .filter-group select:hover {
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            color: black;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #7f8c8d 0%, #6c757d 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .filter-info {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 12px;
+            color: #2c3e50;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            backdrop-filter: blur(10px);
         }
         
         .content-section {
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
             padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
             margin-top: 1rem;
         }
         
         .gallery-item {
-            background: #f8f9fa;
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
         }
         
         .gallery-item:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
         }
         
         .gallery-image {
             width: 100%;
-            height: 200px;
+            height: 220px;
             object-fit: cover;
+            transition: transform 0.4s ease;
         }
         
         .gallery-info {
-            padding: 1rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
         }
         
         .gallery-title {
-            font-weight: 600;
+            font-weight: 700;
             color: #2c3e50;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+            line-height: 1.3;
         }
         
         .gallery-category {
             display: inline-block;
-            padding: 0.25rem 0.5rem;
-            background: #3498db;
+            padding: 0.4rem 0.8rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-radius: 3px;
+            border-radius: 20px;
             font-size: 0.8rem;
-            margin-bottom: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
         }
         
         .gallery-description {
@@ -176,7 +297,16 @@ $currentUser = $auth->getCurrentUser();
         
         .gallery-actions {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        
+        .gallery-actions .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            flex: 1;
+            text-align: center;
         }
         
         .btn-sm {
@@ -184,6 +314,7 @@ $currentUser = $auth->getCurrentUser();
             font-size: 0.8rem;
         }
         
+        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -192,18 +323,22 @@ $currentUser = $auth->getCurrentUser();
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
         }
         
         .modal-content {
-            background-color: white;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
             margin: 5% auto;
-            padding: 2rem;
-            border-radius: 10px;
+            padding: 2.5rem;
+            border-radius: 20px;
             width: 90%;
             max-width: 600px;
             max-height: 80vh;
             overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .modal-header {
@@ -313,6 +448,57 @@ $currentUser = $auth->getCurrentUser();
                 <button class="btn btn-primary" onclick="openModal()">Add New Image</button>
             </div>
             
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label for="filterCategory">Filter by Category:</label>
+                        <select id="filterCategory" onchange="applyFilters()">
+                            <option value="">All Categories</option>
+                            <option value="performance">Performance</option>
+                            <option value="studio">Studio</option>
+                            <option value="behind">Behind the Scenes</option>
+                            <option value="general">General</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filterMonth">Filter by Month:</label>
+                        <select id="filterMonth" onchange="applyFilters()">
+                            <option value="">All Months</option>
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filterYear">Filter by Year:</label>
+                        <select id="filterYear" onchange="applyFilters()">
+                            <option value="">All Years</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+                    </div>
+                </div>
+                
+                <div class="filter-info">
+                    <span id="filterCount">Showing all images</span>
+                </div>
+            </div>
+            
             <div class="content-section">
                 <div class="gallery-grid" id="gallery-grid">
                     <!-- Gallery items will be loaded here -->
@@ -398,6 +584,7 @@ $currentUser = $auth->getCurrentUser();
     <script>
         let galleryItems = [];
         let editingItem = null;
+        let filteredItems = [];
         
         // Load gallery items
         async function loadGallery() {
@@ -410,17 +597,74 @@ $currentUser = $auth->getCurrentUser();
             }
         }
         
+        // Filter functions
+        function applyFilters() {
+            const categoryFilter = document.getElementById('filterCategory').value;
+            const monthFilter = document.getElementById('filterMonth').value;
+            const yearFilter = document.getElementById('filterYear').value;
+            
+            filteredItems = galleryItems.filter(item => {
+                const categoryMatch = !categoryFilter || item.category === categoryFilter;
+                const monthMatch = !monthFilter || item.upload_month === monthFilter;
+                const yearMatch = !yearFilter || item.upload_year === yearFilter;
+                
+                return categoryMatch && monthMatch && yearMatch;
+            });
+            
+            renderFilteredGallery();
+            updateFilterCount();
+        }
+        
+        function clearFilters() {
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterMonth').value = '';
+            document.getElementById('filterYear').value = '';
+            
+            filteredItems = [...galleryItems];
+            renderFilteredGallery();
+            updateFilterCount();
+        }
+        
+        function updateFilterCount() {
+            const countElement = document.getElementById('filterCount');
+            const totalItems = galleryItems.length;
+            const filteredCount = filteredItems.length;
+            
+            if (filteredCount === totalItems) {
+                countElement.textContent = `Showing all ${totalItems} images`;
+            } else {
+                countElement.textContent = `Showing ${filteredCount} of ${totalItems} images`;
+            }
+        }
+        
+        function populateYearFilter() {
+            const yearSelect = document.getElementById('filterYear');
+            const years = [...new Set(galleryItems.map(item => item.upload_year).filter(year => year))].sort();
+            
+            yearSelect.innerHTML = '<option value="">All Years</option>';
+            years.forEach(year => {
+                yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+            });
+        }
+        
         // Render gallery grid with month/year grouping
         function renderGallery() {
+            filteredItems = [...galleryItems];
+            populateYearFilter();
+            renderFilteredGallery();
+            updateFilterCount();
+        }
+        
+        function renderFilteredGallery() {
             const grid = document.getElementById('gallery-grid');
             grid.innerHTML = '';
             
-            if (galleryItems.length === 0) {
+            if (filteredItems.length === 0) {
                 grid.innerHTML = `
                     <div style="text-align: center; padding: 3rem; color: #7f8c8d;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">🖼️</div>
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">�</div>
                         <h3>No images found</h3>
-                        <p>Click "Add New Image" to upload your first image</p>
+                        <p>Try adjusting your filters or add new images</p>
                     </div>
                 `;
                 return;
@@ -429,7 +673,7 @@ $currentUser = $auth->getCurrentUser();
             // Group items by year and month
             const groupedItems = {};
             
-            galleryItems.forEach(item => {
+            filteredItems.forEach(item => {
                 const year = item.upload_year || new Date(item.created_at).getFullYear();
                 const month = item.upload_month || String(new Date(item.created_at).getMonth() + 1).padStart(2, '0');
                 const monthYear = `${year}-${month}`;

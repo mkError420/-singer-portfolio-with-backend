@@ -471,83 +471,37 @@ const Gallery = () => {
                     </h3>
                   </div>
                   
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                    gap: '0.75rem',
-                  }}>
+                  <select
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem',
+                      borderRadius: '8px',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: 'white',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      transition: 'all 0.3s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    }}
+                  >
+                    <option value="all" style={{ background: '#333' }}>All Categories</option>
                     {categories.map((category) => (
-                      <motion.button
-                        key={category.id}
-                        onClick={() => setFilter(category.id)}
-                        whileHover={{ scale: 1.03, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                        style={{
-                          padding: '0.75rem 1rem',
-                          borderRadius: '12px',
-                          background: filter === category.id 
-                            ? 'linear-gradient(135deg, #ff6b6b, #ee5a24)' 
-                            : 'rgba(255, 255, 255, 0.08)',
-                          border: filter === category.id 
-                            ? '1px solid rgba(255, 107, 107, 0.3)' 
-                            : '1px solid rgba(255, 255, 255, 0.15)',
-                          color: 'white',
-                          fontSize: '0.85rem',
-                          fontWeight: filter === category.id ? '600' : '500',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          position: 'relative',
-                          overflow: 'hidden',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (filter !== category.id) {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (filter !== category.id) {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                          }
-                        }}
-                      >
-                        <span>{category.label}</span>
-                        <span style={{
-                          background: filter === category.id 
-                            ? 'rgba(255, 255, 255, 0.2)' 
-                            : 'rgba(255, 255, 255, 0.1)',
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '8px',
-                          fontSize: '0.75rem',
-                          fontWeight: '600',
-                        }}>
-                          {categoryCounts[category.id] || 0}
-                        </span>
-                        {filter === category.id && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', stiffness: 500 }}
-                            style={{
-                              position: 'absolute',
-                              top: '6px',
-                              right: '6px',
-                              width: '8px',
-                              height: '8px',
-                              background: '#ff6b6b',
-                              borderRadius: '50%',
-                              border: '2px solid white',
-                              boxShadow: '0 2px 8px rgba(255, 107, 107, 0.4)',
-                            }}
-                          />
-                        )}
-                      </motion.button>
+                      <option key={category.id} value={category.id} style={{ background: '#333' }}>
+                        {category.label} ({categoryCounts[category.id] || 0})
+                      </option>
                     ))}
-                  </div>
+                  </select>
                 </motion.div>
 
                 {/* Months Section */}
