@@ -673,7 +673,7 @@ const Gallery = () => {
                       borderRadius: '16px',
                       background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
                       border: 'none',
-                      color: 'white',
+                      color: 'black',
                       fontWeight: '600',
                       cursor: 'pointer',
                       transition: 'all 0.3s ease',

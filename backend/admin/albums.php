@@ -121,6 +121,95 @@ $currentUser = $auth->getCurrentUser();
             opacity: 0.9;
         }
         
+        /* Filter Section Styles */
+        .filter-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .filter-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .filter-group select,
+        .filter-group button {
+            padding: 1rem;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+        
+        .filter-group select {
+            color: #2c3e50;
+            cursor: pointer;
+        }
+        
+        .filter-group select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .filter-group select:hover {
+            border-color: #3498db;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            color: black;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #7f8c8d 0%, #6c757d 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .filter-info {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 12px;
+            color: #2c3e50;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
         .content-section {
             background: white;
             padding: 2rem;
@@ -292,7 +381,7 @@ $currentUser = $auth->getCurrentUser();
         .file-upload-label {
             display: inline-block;
             padding: 0.5rem 1rem;
-            background: #ecf0f1;
+            background: #636a6bff;
             border: 1px solid #bdc3c7;
             border-radius: 5px;
             cursor: pointer;
@@ -336,6 +425,34 @@ $currentUser = $auth->getCurrentUser();
             <div class="header">
                 <h1>Manage Albums</h1>
                 <button class="btn btn-primary" onclick="openModal()">Add New Album</button>
+            </div>
+            
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label for="filterYear">Filter by Year:</label>
+                        <select id="filterYear" onchange="applyFilters()">
+                            <option value="">All Years</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filterCategory">Filter by Year:</label>
+                        <select id="filterCategory" onchange="applyFilters()">
+                            <option value="">All Years</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+                    </div>
+                </div>
+                
+                <div class="filter-info">
+                    <span id="filterCount">Showing all albums</span>
+                </div>
             </div>
             
             <div class="content-section">
@@ -461,6 +578,11 @@ $currentUser = $auth->getCurrentUser();
         let albums = [];
         let editingAlbum = null;
         let categories = [];
+        let filteredAlbums = [];
+        
+        // Filter states
+        let currentYearFilter = '';
+        let currentCategoryFilter = '';
         
         // Load albums
         async function loadAlbums() {
@@ -474,10 +596,10 @@ $currentUser = $auth->getCurrentUser();
                 
                 albums = await response.json();
                 console.log('Albums loaded:', albums);
-                renderAlbums();
+                populateYearFilter();
+                applyFilters();
             } catch (error) {
                 console.error('Error loading albums:', error);
-                alert('Error loading albums: ' + error.message);
             }
         }
         
@@ -526,14 +648,15 @@ $currentUser = $auth->getCurrentUser();
         // Populate category select dropdown
         function populateCategorySelect() {
             console.log('Populating category select with:', categories);
-            const select = document.getElementById('category');
+            console.log('Filter category data structure:', JSON.stringify(categories, null, 2));
+            const select = document.getElementById('filterCategory');
             
             if (!select) {
-                console.error('Category select element not found!');
+                console.error('Filter category select element not found!');
                 return;
             }
             
-            select.innerHTML = '<option value="">Select Category</option>';
+            select.innerHTML = '<option value="">All Categories</option>';
             
             if (!categories || categories.length === 0) {
                 console.warn('No categories to populate');
@@ -542,7 +665,7 @@ $currentUser = $auth->getCurrentUser();
             
             categories.forEach(category => {
                 const option = document.createElement('option');
-                option.value = category.name;
+                option.value = category.id;
                 option.textContent = category.name;
                 select.appendChild(option);
             });
@@ -550,14 +673,117 @@ $currentUser = $auth->getCurrentUser();
             console.log('Category select populated. Options count:', select.options.length);
         }
         
+        // Populate modal category dropdown
+        function populateModalCategorySelect() {
+            console.log('Populating modal category select with:', categories);
+            console.log('Category data structure:', JSON.stringify(categories, null, 2));
+            const modalSelect = document.getElementById('category');
+            
+            if (!modalSelect) {
+                console.error('Modal category select element not found!');
+                return;
+            }
+            
+            modalSelect.innerHTML = '<option value="">Select Category</option>';
+            
+            if (!categories || categories.length === 0) {
+                console.warn('No categories to populate');
+                return;
+            }
+            
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                modalSelect.appendChild(option);
+            });
+            
+            console.log('Modal category select populated. Options count:', modalSelect.options.length);
+        }
+        
         // Category modal functions
         function showAddCategoryModal() {
             document.getElementById('categoryModal').style.display = 'block';
             document.getElementById('categoryForm').reset();
+            populateModalCategorySelect();
         }
         
         function closeCategoryModal() {
             document.getElementById('categoryModal').style.display = 'none';
+        }
+        
+        // Filter functions
+        function applyFilters() {
+            currentYearFilter = document.getElementById('filterYear').value;
+            currentCategoryFilter = document.getElementById('filterCategory').value;
+            
+            filteredAlbums = albums.filter(album => {
+                const albumYear = album.release_year || (album.created_at ? new Date(album.created_at).getFullYear() : null);
+                const yearMatch = !currentYearFilter || albumYear.toString() === currentYearFilter;
+                const categoryMatch = !currentCategoryFilter || album.category === currentCategoryFilter;
+                return yearMatch && categoryMatch;
+            });
+            
+            console.log('Filter applied:', {
+                yearFilter: currentYearFilter,
+                categoryFilter: currentCategoryFilter,
+                totalAlbums: albums.length,
+                filteredAlbums: filteredAlbums.length
+            });
+            
+            renderAlbums();
+            updateFilterCount();
+        }
+        
+        function refreshCategories() {
+            console.log('Manually refreshing categories...');
+            loadCategories();
+        }
+        
+        function updateFilterCount() {
+            const countElement = document.getElementById('filterCount');
+            const totalItems = albums.length;
+            const filteredCount = filteredAlbums.length;
+            
+            if (filteredCount === totalItems) {
+                countElement.textContent = `Showing all ${totalItems} albums`;
+            } else {
+                countElement.textContent = `Showing ${filteredCount} of ${totalItems} albums`;
+            }
+        }
+        
+        function clearFilters() {
+            console.log('Clearing filters...');
+            
+            // Clear filter dropdowns
+            document.getElementById('filterYear').value = '';
+            document.getElementById('filterCategory').value = '';
+            
+            // Reset filter variables
+            currentYearFilter = '';
+            currentCategoryFilter = '';
+            
+            // Reset filtered albums to show all
+            filteredAlbums = [...albums];
+            
+            // Re-render albums and update count
+            renderAlbums();
+            updateFilterCount();
+            
+            console.log('Filters cleared. Total albums:', albums.length);
+        }
+        
+        function populateYearFilter() {
+            const yearSelect = document.getElementById('filterYear');
+            const years = [...new Set(albums.map(album => {
+                const year = album.release_year || (album.created_at ? new Date(album.created_at).getFullYear() : null);
+                return year ? year.toString() : null;
+            }).filter(year => year))].sort();
+            
+            yearSelect.innerHTML = '<option value="">All Years</option>';
+            years.forEach(year => {
+                yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+            });
         }
         
         // Render albums table
@@ -566,12 +792,20 @@ $currentUser = $auth->getCurrentUser();
             const tbody = document.getElementById('albums-table');
             tbody.innerHTML = '';
             
-            if (!albums || albums.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No albums found</td></tr>';
+            if (filteredAlbums.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 3rem; color: #7f8c8d;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">🎵</div>
+                            <h3>No albums found</h3>
+                            <p>Click "Add New Album" to create your first album</p>
+                        </td>
+                    </tr>
+                `;
                 return;
             }
             
-            albums.forEach((album, index) => {
+            filteredAlbums.forEach((album, index) => {
                 console.log(`Rendering album ${index + 1}:`, album);
                 
                 const row = document.createElement('tr');
@@ -613,6 +847,7 @@ $currentUser = $auth->getCurrentUser();
             document.getElementById('albumForm').reset();
             document.getElementById('imagePreview').style.display = 'none';
             editingAlbum = null;
+            populateModalCategorySelect(); // ✅ Added this call
         }
         
         // Close modal
@@ -872,6 +1107,7 @@ $currentUser = $auth->getCurrentUser();
         document.addEventListener('DOMContentLoaded', function() {
             loadAlbums();
             loadCategories();
+            populateFilterCategory(); // ✅ Added this call
         });
     </script>
 </body>

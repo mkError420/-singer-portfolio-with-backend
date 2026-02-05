@@ -18,6 +18,10 @@ const Music = () => {
   const [singlesCurrentPage, setSinglesCurrentPage] = useState(1);
   const albumsPerPage = 6;
   const singlesPerPage = 9;
+  
+  // Filter states
+  const [albumsFilter, setAlbumsFilter] = useState('all');
+  const [singlesFilter, setSinglesFilter] = useState('all');
 
   // Categories for filtering
   const categories = [
@@ -147,14 +151,16 @@ const Music = () => {
     setCurrentVideoUrl('');
   };
 
-  // Filter albums and singles based on search and category
+  // Filter albums and singles based on search, category, and year filter
   const filteredAlbums = albums.filter(album => {
     const title = album.title || '';
     const artist = album.artist || '';
     const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          artist.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || selectedCategory === 'albums';
-    return matchesSearch && matchesCategory;
+    const albumYear = album.release_year || (album.created_at ? new Date(album.created_at).getFullYear() : null);
+    const matchesYearFilter = albumsFilter === 'all' || albumYear.toString() === albumsFilter;
+    return matchesSearch && matchesCategory && matchesYearFilter;
   });
 
   const filteredSingles = singles.filter(single => {
@@ -163,8 +169,29 @@ const Music = () => {
     const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          artist.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || selectedCategory === 'singles';
-    return matchesSearch && matchesCategory;
+    const singleYear = single.release_year || (single.created_at ? new Date(single.created_at).getFullYear() : null);
+    const matchesYearFilter = singlesFilter === 'all' || singleYear.toString() === singlesFilter;
+    return matchesSearch && matchesCategory && matchesYearFilter;
   });
+
+  // Filter functions
+  const getAvailableAlbumYears = () => {
+    const years = new Set();
+    albums.forEach(album => {
+      const year = album.release_year || (album.created_at ? new Date(album.created_at).getFullYear() : null);
+      if (year) years.add(year.toString());
+    });
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  };
+
+  const getAvailableSingleYears = () => {
+    const years = new Set();
+    singles.forEach(single => {
+      const year = single.release_year || (single.created_at ? new Date(single.created_at).getFullYear() : null);
+      if (year) years.add(year.toString());
+    });
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  };
 
   // Pagination calculations for albums
   const albumsIndexOfLastItem = albumsCurrentPage * albumsPerPage;
@@ -182,7 +209,7 @@ const Music = () => {
   useEffect(() => {
     setAlbumsCurrentPage(1);
     setSinglesCurrentPage(1);
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, albumsFilter, singlesFilter]);
 
   // Pagination functions
   const albumsPaginate = (pageNumber) => setAlbumsCurrentPage(pageNumber);
@@ -410,6 +437,140 @@ const Music = () => {
                 Complete collections of musical stories
               </p>
             </motion.div>
+
+            {/* Albums Filter */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '1rem',
+              marginBottom: '2rem',
+              flexWrap: 'wrap',
+            }}>
+              <motion.button
+                key="album-all"
+                onClick={() => setAlbumsFilter('all')}
+                whileHover={{ scale: 1.05, y: -3 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '25px',
+                  background: albumsFilter === 'all' 
+                    ? 'linear-gradient(135deg, #667eea, #764ba2)' 
+                    : 'rgba(255, 255, 255, 0.15)',
+                  border: albumsFilter === 'all' 
+                    ? '2px solid #667eea' 
+                    : '1px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  fontSize: '0.85rem',
+                  fontWeight: albumsFilter === 'all' ? '600' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: albumsFilter === 'all' 
+                    ? '0 6px 20px rgba(102, 126, 234, 0.4)' 
+                    : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                  backdropFilter: 'blur(10px)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+                onMouseEnter={(e) => {
+                  if (albumsFilter !== 'all') {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (albumsFilter !== 'all') {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                  }
+                }}
+              >
+                <span style={{ position: 'relative', zIndex: 1 }}>
+                  All Albums
+                </span>
+                {albumsFilter === 'all' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 400 }}
+                    style={{
+                      position: 'absolute',
+                      top: '-2px',
+                      right: '-2px',
+                      width: '10px',
+                      height: '10px',
+                      background: '#667eea',
+                      borderRadius: '50%',
+                      border: '2px solid white',
+                    }}
+                  />
+                )}
+              </motion.button>
+              
+              {/* Album Year Filters */}
+              {getAvailableAlbumYears().map((year) => (
+                <motion.button
+                  key={`album-year-${year}`}
+                  onClick={() => setAlbumsFilter(year)}
+                  whileHover={{ scale: 1.05, y: -3 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    padding: '0.6rem 1rem',
+                    borderRadius: '20px',
+                    background: albumsFilter === year 
+                      ? 'linear-gradient(135deg, #667eea, #764ba2)' 
+                      : 'rgba(255, 255, 255, 0.15)',
+                    border: albumsFilter === year 
+                      ? '2px solid #667eea' 
+                      : '1px solid rgba(255, 255, 255, 0.3)',
+                    color: 'white',
+                    fontSize: '0.85rem',
+                    fontWeight: albumsFilter === year ? '600' : '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: albumsFilter === year 
+                      ? '0 6px 20px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (albumsFilter !== year) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (albumsFilter !== year) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    }
+                  }}
+                >
+                  <span style={{ position: 'relative', zIndex: 1 }}>
+                    {year}
+                  </span>
+                  {albumsFilter === year && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 400 }}
+                      style={{
+                        position: 'absolute',
+                        top: '-2px',
+                        right: '-2px',
+                        width: '8px',
+                        height: '8px',
+                        background: '#667eea',
+                        borderRadius: '50%',
+                        border: '2px solid white',
+                      }}
+                    />
+                  )}
+                </motion.button>
+              ))}
+            </div>
 
             <div style={{
               display: 'grid',
@@ -750,6 +911,140 @@ const Music = () => {
                 Individual releases and standalone tracks
               </p>
             </motion.div>
+
+            {/* Singles Filter */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '1rem',
+              marginBottom: '2rem',
+              flexWrap: 'wrap',
+            }}>
+              <motion.button
+                key="single-all"
+                onClick={() => setSinglesFilter('all')}
+                whileHover={{ scale: 1.05, y: -3 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '25px',
+                  background: singlesFilter === 'all' 
+                    ? 'linear-gradient(135deg, #f093fb, #f5576c)' 
+                    : 'rgba(255, 255, 255, 0.15)',
+                  border: singlesFilter === 'all' 
+                    ? '2px solid #f093fb' 
+                    : '1px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  fontSize: '0.85rem',
+                  fontWeight: singlesFilter === 'all' ? '600' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: singlesFilter === 'all' 
+                    ? '0 6px 20px rgba(240, 147, 251, 0.4)' 
+                    : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                  backdropFilter: 'blur(10px)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+                onMouseEnter={(e) => {
+                  if (singlesFilter !== 'all') {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (singlesFilter !== 'all') {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                  }
+                }}
+              >
+                <span style={{ position: 'relative', zIndex: 1 }}>
+                  All Singles
+                </span>
+                {singlesFilter === 'all' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 400 }}
+                    style={{
+                      position: 'absolute',
+                      top: '-2px',
+                      right: '-2px',
+                      width: '10px',
+                      height: '10px',
+                      background: '#f093fb',
+                      borderRadius: '50%',
+                      border: '2px solid white',
+                    }}
+                  />
+                )}
+              </motion.button>
+              
+              {/* Single Year Filters */}
+              {getAvailableSingleYears().map((year) => (
+                <motion.button
+                  key={`single-year-${year}`}
+                  onClick={() => setSinglesFilter(year)}
+                  whileHover={{ scale: 1.05, y: -3 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    padding: '0.6rem 1rem',
+                    borderRadius: '20px',
+                    background: singlesFilter === year 
+                      ? 'linear-gradient(135deg, #f093fb, #f5576c)' 
+                      : 'rgba(255, 255, 255, 0.15)',
+                    border: singlesFilter === year 
+                      ? '2px solid #f093fb' 
+                      : '1px solid rgba(255, 255, 255, 0.3)',
+                    color: 'white',
+                    fontSize: '0.85rem',
+                    fontWeight: singlesFilter === year ? '600' : '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: singlesFilter === year 
+                      ? '0 6px 20px rgba(240, 147, 251, 0.4)' 
+                      : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (singlesFilter !== year) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (singlesFilter !== year) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    }
+                  }}
+                >
+                  <span style={{ position: 'relative', zIndex: 1 }}>
+                    {year}
+                  </span>
+                  {singlesFilter === year && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 400 }}
+                      style={{
+                        position: 'absolute',
+                        top: '-2px',
+                        right: '-2px',
+                        width: '8px',
+                        height: '8px',
+                        background: '#f093fb',
+                        borderRadius: '50%',
+                        border: '2px solid white',
+                      }}
+                    />
+                  )}
+                </motion.button>
+              ))}
+            </div>
 
             <div style={{
               display: 'grid',
