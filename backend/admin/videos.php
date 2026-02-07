@@ -639,7 +639,14 @@ $currentUser = $auth->getCurrentUser();
                     console.error('API error response:', error);
                     console.error('Response status:', response.status);
                     console.error('Response headers:', response.headers);
-                    alert('Error saving video: ' + error);
+                    
+                    // Try to parse as JSON, if fails show raw error
+                    try {
+                        const errorJson = JSON.parse(error);
+                        alert('Error saving video: ' + errorJson.message);
+                    } catch (e) {
+                        alert('Error saving video: ' + error);
+                    }
                 }
             } catch (error) {
                 console.error('Error saving video:', error);
